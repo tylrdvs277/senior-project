@@ -1,0 +1,209 @@
+
+;; Function regtest1 (regtest1, funcdef_no=21, decl_uid=6292, cgraph_uid=21, symbol_order=21)
+
+
+;; Generating RTL for gimple basic block 2
+
+
+try_optimize_cfg iteration 1
+
+Merging block 3 into block 2...
+Merged blocks 2 and 3.
+Merged 2 and 3 without moving.
+Removing jump 42.
+Merging block 4 into block 2...
+Merged blocks 2 and 4.
+Merged 2 and 4 without moving.
+
+
+try_optimize_cfg iteration 2
+
+
+
+;;
+;; Full RTL generated for this function:
+;;
+(note 1 0 4 NOTE_INSN_DELETED)
+(note 4 1 2 2 [bb 2] NOTE_INSN_BASIC_BLOCK)
+(insn 2 4 3 2 (set (reg/v:SI 139 [ a ])
+        (reg:SI 0 r0 [ a ])) regtest1.c:4 -1
+     (nil))
+(note 3 2 6 2 NOTE_INSN_FUNCTION_BEG)
+(call_insn 6 3 7 2 (parallel [
+            (set (reg:SI 0 r0)
+                (call (mem:SI (symbol_ref:SI ("getint") [flags 0x41]  <function_decl 0x768d0280 getint>) [0 getint S4 A32])
+                    (const_int 0 [0])))
+            (use (const_int 0 [0]))
+            (clobber (reg:SI 14 lr))
+        ]) regtest1.c:6 -1
+     (nil)
+    (expr_list (clobber (reg:SI 12 ip))
+        (nil)))
+(insn 7 6 8 2 (set (reg/v:SI 110 [ v1 ])
+        (reg:SI 0 r0)) regtest1.c:6 -1
+     (nil))
+(call_insn 8 7 9 2 (parallel [
+            (set (reg:SI 0 r0)
+                (call (mem:SI (symbol_ref:SI ("getint") [flags 0x41]  <function_decl 0x768d0280 getint>) [0 getint S4 A32])
+                    (const_int 0 [0])))
+            (use (const_int 0 [0]))
+            (clobber (reg:SI 14 lr))
+        ]) regtest1.c:7 -1
+     (nil)
+    (expr_list (clobber (reg:SI 12 ip))
+        (nil)))
+(insn 9 8 10 2 (set (reg/v:SI 111 [ v2 ])
+        (reg:SI 0 r0)) regtest1.c:7 -1
+     (nil))
+(insn 10 9 11 2 (set (reg/v:SI 112 [ v3 ])
+        (plus:SI (reg/v:SI 110 [ v1 ])
+            (reg/v:SI 139 [ a ]))) regtest1.c:8 -1
+     (nil))
+(insn 11 10 12 2 (set (reg/v:SI 113 [ v4 ])
+        (plus:SI (reg/v:SI 111 [ v2 ])
+            (reg/v:SI 139 [ a ]))) regtest1.c:9 -1
+     (nil))
+(insn 12 11 13 2 (set (reg/v:SI 114 [ v5 ])
+        (plus:SI (reg/v:SI 112 [ v3 ])
+            (reg/v:SI 113 [ v4 ]))) regtest1.c:10 -1
+     (nil))
+(call_insn 13 12 14 2 (parallel [
+            (set (reg:SI 0 r0)
+                (call (mem:SI (symbol_ref:SI ("getint") [flags 0x41]  <function_decl 0x768d0280 getint>) [0 getint S4 A32])
+                    (const_int 0 [0])))
+            (use (const_int 0 [0]))
+            (clobber (reg:SI 14 lr))
+        ]) regtest1.c:11 -1
+     (nil)
+    (expr_list (clobber (reg:SI 12 ip))
+        (nil)))
+(insn 14 13 15 2 (set (reg/v:SI 115 [ v6 ])
+        (reg:SI 0 r0)) regtest1.c:11 -1
+     (nil))
+(call_insn 15 14 16 2 (parallel [
+            (set (reg:SI 0 r0)
+                (call (mem:SI (symbol_ref:SI ("getint") [flags 0x41]  <function_decl 0x768d0280 getint>) [0 getint S4 A32])
+                    (const_int 0 [0])))
+            (use (const_int 0 [0]))
+            (clobber (reg:SI 14 lr))
+        ]) regtest1.c:12 -1
+     (nil)
+    (expr_list (clobber (reg:SI 12 ip))
+        (nil)))
+(insn 16 15 17 2 (set (reg/v:SI 116 [ v7 ])
+        (reg:SI 0 r0)) regtest1.c:12 -1
+     (nil))
+(insn 17 16 18 2 (set (reg/v:SI 117 [ v8 ])
+        (plus:SI (reg/v:SI 115 [ v6 ])
+            (const_int 1 [0x1]))) regtest1.c:13 -1
+     (nil))
+(insn 18 17 19 2 (set (reg/v:SI 118 [ v9 ])
+        (plus:SI (reg/v:SI 116 [ v7 ])
+            (const_int -1 [0xffffffffffffffff]))) regtest1.c:14 -1
+     (nil))
+(insn 19 18 20 2 (set (reg/v:SI 119 [ v10 ])
+        (plus:SI (reg/v:SI 117 [ v8 ])
+            (reg/v:SI 118 [ v9 ]))) regtest1.c:15 -1
+     (nil))
+(call_insn 20 19 21 2 (parallel [
+            (set (reg:SI 0 r0)
+                (call (mem:SI (symbol_ref:SI ("getint") [flags 0x41]  <function_decl 0x768d0280 getint>) [0 getint S4 A32])
+                    (const_int 0 [0])))
+            (use (const_int 0 [0]))
+            (clobber (reg:SI 14 lr))
+        ]) regtest1.c:16 -1
+     (nil)
+    (expr_list (clobber (reg:SI 12 ip))
+        (nil)))
+(insn 21 20 22 2 (set (reg/v:SI 120 [ v11 ])
+        (reg:SI 0 r0)) regtest1.c:16 -1
+     (nil))
+(call_insn 22 21 23 2 (parallel [
+            (set (reg:SI 0 r0)
+                (call (mem:SI (symbol_ref:SI ("getint") [flags 0x41]  <function_decl 0x768d0280 getint>) [0 getint S4 A32])
+                    (const_int 0 [0])))
+            (use (const_int 0 [0]))
+            (clobber (reg:SI 14 lr))
+        ]) regtest1.c:17 -1
+     (nil)
+    (expr_list (clobber (reg:SI 12 ip))
+        (nil)))
+(insn 23 22 24 2 (set (reg/v:SI 121 [ v12 ])
+        (reg:SI 0 r0)) regtest1.c:17 -1
+     (nil))
+(insn 24 23 25 2 (set (reg/v:SI 123 [ v14 ])
+        (plus:SI (reg/v:SI 120 [ v11 ])
+            (reg/v:SI 121 [ v12 ]))) regtest1.c:19 -1
+     (nil))
+(insn 25 24 26 2 (set (reg:SI 141)
+        (plus:SI (reg/v:SI 110 [ v1 ])
+            (reg/v:SI 111 [ v2 ]))) regtest1.c:22 -1
+     (nil))
+(insn 26 25 27 2 (set (reg:SI 142)
+        (plus:SI (reg:SI 141)
+            (reg/v:SI 112 [ v3 ]))) regtest1.c:22 -1
+     (nil))
+(insn 27 26 28 2 (set (reg:SI 143)
+        (plus:SI (reg:SI 142)
+            (reg/v:SI 113 [ v4 ]))) regtest1.c:22 -1
+     (nil))
+(insn 28 27 29 2 (set (reg:SI 144)
+        (plus:SI (reg:SI 143)
+            (reg/v:SI 114 [ v5 ]))) regtest1.c:22 -1
+     (nil))
+(insn 29 28 30 2 (set (reg:SI 145)
+        (plus:SI (reg:SI 144)
+            (reg/v:SI 115 [ v6 ]))) regtest1.c:22 -1
+     (nil))
+(insn 30 29 31 2 (set (reg:SI 146)
+        (plus:SI (reg:SI 145)
+            (reg/v:SI 116 [ v7 ]))) regtest1.c:22 -1
+     (nil))
+(insn 31 30 32 2 (set (reg:SI 147)
+        (plus:SI (reg:SI 146)
+            (reg/v:SI 117 [ v8 ]))) regtest1.c:22 -1
+     (nil))
+(insn 32 31 33 2 (set (reg:SI 148)
+        (plus:SI (reg:SI 147)
+            (reg/v:SI 118 [ v9 ]))) regtest1.c:22 -1
+     (nil))
+(insn 33 32 34 2 (set (reg:SI 149)
+        (plus:SI (reg:SI 148)
+            (reg/v:SI 119 [ v10 ]))) regtest1.c:22 -1
+     (nil))
+(insn 34 33 35 2 (set (reg:SI 150)
+        (plus:SI (reg:SI 149)
+            (reg/v:SI 120 [ v11 ]))) regtest1.c:22 -1
+     (nil))
+(insn 35 34 36 2 (set (reg:SI 151)
+        (plus:SI (reg:SI 150)
+            (reg/v:SI 121 [ v12 ]))) regtest1.c:22 -1
+     (nil))
+(insn 36 35 37 2 (set (reg:SI 152 [ v13 ])
+        (minus:SI (reg/v:SI 120 [ v11 ])
+            (reg/v:SI 121 [ v12 ]))) regtest1.c:18 -1
+     (nil))
+(insn 37 36 38 2 (set (reg:SI 153)
+        (plus:SI (reg:SI 151)
+            (reg:SI 152 [ v13 ]))) regtest1.c:22 -1
+     (nil))
+(insn 38 37 39 2 (set (reg:SI 154)
+        (plus:SI (reg:SI 153)
+            (reg/v:SI 123 [ v14 ]))) regtest1.c:22 -1
+     (nil))
+(insn 39 38 40 2 (set (reg:SI 155 [ v15 ])
+        (plus:SI (reg/v:SI 139 [ a ])
+            (reg/v:SI 123 [ v14 ]))) regtest1.c:20 -1
+     (nil))
+(insn 40 39 41 2 (set (reg:SI 140)
+        (plus:SI (reg:SI 154)
+            (reg:SI 155 [ v15 ]))) regtest1.c:22 -1
+     (nil))
+(insn 41 40 45 2 (set (reg:SI 138 [ <retval> ])
+        (reg:SI 140)) regtest1.c:22 -1
+     (nil))
+(insn 45 41 46 2 (set (reg/i:SI 0 r0)
+        (reg:SI 138 [ <retval> ])) regtest1.c:23 -1
+     (nil))
+(insn 46 45 0 2 (use (reg/i:SI 0 r0)) regtest1.c:23 -1
+     (nil))
