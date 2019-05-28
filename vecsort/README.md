@@ -1,3 +1,7 @@
+Correct output is in vector.sorted.
+
+GCC's perf stats below.
+
 ```
 make -f Makefile.cpp clean
 
