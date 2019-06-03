@@ -1,16 +1,16 @@
 CXX = g++
 CC = gcc
 CFLAGS = -O1
-CXXSRCS = matadd-driver.cpp
-SSRCS = matadd.s
+CXXSRCS = driver.cpp
+SSRCS = vecsort.s
 OBJECTS = $(addprefix obj/, $(notdir $(CXXSRCS:.cpp=.o) $(SSRCS:.s=.o)))
 _xxxdir := $(shell mkdir -p obj)
-BIN = matadd
+BIN = vecsort
 
 all: $(BIN)
 	@echo "...."
 	@echo "Build complete"
-	@echo "Run : ./matadd > outfile"
+	@echo "Run : ./vecsort > outfile"
 
 $(BIN): $(sort $(OBJECTS))
 	$(CXX) $^ $(CFLAGS) -o $@

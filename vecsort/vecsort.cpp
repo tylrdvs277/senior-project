@@ -12,7 +12,7 @@ void vecsort(int* vec, unsigned int length)
       if (vec[j] > vec[j+1]) 
       {
         int temp = vec[j];
-        vec[j] = vec[j-1];
+        vec[j] = vec[j+1];
         vec[j+1] = temp;
       }
     }
