@@ -21,5 +21,9 @@ $(addprefix obj/, $(SSRCS:.s=.o)): $(SSRCS)
 $(addprefix obj/, $(CXXSRCS:.cpp=.o)): $(CXXSRCS)
 	$(CXX) $(CFLAGS) -c $< -o $@
 
+run:
+	./$(BIN) > outfile
+	diff -q outfile vector.sorted
+
 clean:
 	rm -f $(OBJECTS) $(BIN)
