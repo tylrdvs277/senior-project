@@ -35,6 +35,29 @@ class RTL:
     def set_uses(self):
         self.uses = set()
 
+    @staticmethod
+    def get_(regs, register_mapping):
+        ret = regs
+
+        if register_mapping is not None:
+            ret = set()
+            for reg in regs:
+                ret.add(register_mapping[reg])
+
+        return ret
+
+    def set_defs_reg(self, register_mapping=None):
+        self.defs = RTL.get_(self.defs, register_mapping)
+
+    def set_uses_reg(self, register_mapping=None):
+        self.uses = RTL.get_(self.uses, register_mapping)
+
+    def get_defs(self):
+        return self.defs
+
+    def get_uses(self):
+        return self.uses
+
     def asm(self, register_mapping, spilled):
         return []
 

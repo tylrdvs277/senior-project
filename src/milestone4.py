@@ -6,6 +6,7 @@ import sexp as s
 import rtl as r
 import graph as g
 import liveness as l
+import scheduling as i
 
 
 def parse_args(args: List[str]):
@@ -31,6 +32,8 @@ def main():
     vertices = g.generate_cfg(rtls)
     g.identify_loops(vertices)
 
+    i.bb_instruction_schedule(vertices, None)
+
     colorable = False
     while not colorable:
 
@@ -47,7 +50,6 @@ def main():
 
     register_allocation = l.color_to_register(colors)
     rtls = [vertex.rtl for vertex in vertices]
-
     
     asm = r.generate_assembly(rtls, register_allocation, spilled)
 

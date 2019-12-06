@@ -100,20 +100,6 @@ class Matrix:
 
         return interfere
 
-    def __str__(self):
-        rows = []
-        top_row = []
-
-        for row_num in range(self.dim):
-            rows.append(
-                "{:>25}: | {} |".format(
-                    str(self.row_to_node[row_num]),
-                    "   ".join([str(i) for i in self.matrix[row_num]])
-                )
-            )
-
-        return "\n".join(rows)
-
     def __contains__(self, node):
         return node in self.node_to_row
 
