@@ -10,7 +10,7 @@ BIN = matadd
 all: $(BIN)
 	@echo "...."
 	@echo "Build complete"
-	@echo "Run : ./matadd > outfile"
+	@echo "Run : ./$(BIN) > outfile"
 
 $(BIN): $(sort $(OBJECTS))
 	$(CXX) $^ $(CFLAGS) -o $@
@@ -20,6 +20,10 @@ $(addprefix obj/, $(SSRCS:.s=.o)): $(SSRCS)
 
 $(addprefix obj/, $(CXXSRCS:.cpp=.o)): $(CXXSRCS)
 	$(CXX) $(CFLAGS) -c $< -o $@
+
+run:
+	./$(BIN) > outfile
+	diff -q outfile output.gold
 
 clean:
 	rm -f $(OBJECTS) $(BIN)

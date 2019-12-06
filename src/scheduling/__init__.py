@@ -25,20 +25,21 @@ class Graph:
         def __lt__(self, value):
             assert(self.__class__ == value.__class__)
 
+            lt = False
+
             if self.d > value.d:
-                return True
+                lt = True
             elif self.d == value.d:
                 if self.s > value.s:
-                    return True
+                    lt = True
                 elif self.s == value.s:
-                    return self.order < value.order
-                else:
-                    return False
-            else:
-                return False
+                    lt = self.order < value.order
+
+            return lt
 
     def __init__(self, directed: bool = False):
         self.__matrix = []
+        self.__transpose = []
         self.__dim = 0
         self.__node_to_row = dict()
         self.__row_to_node = dict()
@@ -51,10 +52,12 @@ class Graph:
 
         self.__dim += 1
 
-        for row in self.__matrix:
-            row.append(None)
+        for idx in range(len(self.__matrix)):
+            self.__matrix[idx].append(None)
+            self.__transpose[idx].append(None)
 
         self.__matrix.append([None for _ in range(self.__dim)])
+        self.__transpose.append([None for _ in range(self.__dim)])
 
         self.__node_to_row[node] = self.__dim - 1
         self.__row_to_node[self.__dim - 1] = node
@@ -72,8 +75,10 @@ class Graph:
 
         self.__node_heuristics[node1].s += 1 if self.__matrix[row1][row2] is None else 0
         self.__matrix[row1][row2] = weight
+        self.__transpose[row2][row1] = weight
         if not self.__directed:
             self.__matrix[row2][row1] = weight
+            self.__transpose[row1][row2] = weight
             self.__node_heuristics[node2].s += 1 if self.__matrix[row1][row2] is None else 0
 
     def remove_node(self, node: Any):
@@ -81,15 +86,16 @@ class Graph:
 
         row_num = self.__node_to_row[node]
 
-        del self.__matrix[row_num]
+        self.__matrix[row_num] = [None for _ in range(self.__dim)]
+        self.__transpose[row_num] = [None for _ in range(self.__dim)]
 
-        for row in self.__matrix:
-            del row[row_num]
+        for idx in range(len(self.__matrix)):
+            self.__matrix[idx][row_num] = None
+            self.__transpose[idx][row_num] = None
 
         del self.__row_to_node[row_num]
         del self.__node_to_row[node]
-
-        self.__dim -= 1
+        del self.__node_heuristics[node]
 
     def is_edge(self, node1: Any, node2: Any):
         assert(node1 in self and node2 in self)
@@ -132,6 +138,29 @@ class Graph:
                             self.__matrix[idx][row]
                         )
                     )
+
+    def schedule(self):
+        ready = PriorityQueue()
+        seen = set()
+        schedule = []
+        curr = None
+
+        while True:
+            for idx in range(len(self.__transpose)):
+                if (idx in self.__row_to_node
+                        and self.__row_to_node[idx] not in seen
+                        and not any(self.__transpose[idx])):
+                    seen.add(self.__row_to_node[idx])
+                    ready.put(self.__node_heuristics[self.__row_to_node[idx]])
+
+            if ready.empty():
+                break
+
+            curr = ready.get()
+            schedule.append(curr.order)
+            self.remove_node(curr.order)
+
+        return schedule
 
     def __contains__(self, node):
         return node in self.__node_to_row
@@ -222,4 +251,4 @@ def local_instruction_schedule(vertices: List[Vertex], start, end):
             idx2 += 1
 
     matrix.heuristics()
-    
+    vertices[start : end + 1] = [vertices[idx] for idx in matrix.schedule()]
