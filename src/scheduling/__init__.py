@@ -264,9 +264,9 @@ def local_instruction_schedule(vertices: List[Vertex], start, end):
                 next_defs = next_defs.union(CALLER_SAVE_REGISTERS)
                 next_uses = next_uses.union(CALLER_SAVE_REGISTERS)
 
-            curr_defs = curr_defs.difference(next_defs)
             if len(curr_defs.intersection(next_uses)) != 0:
                 matrix.add_edge(idx2, idx1, ANTI_LATENCY)
+            curr_defs = curr_defs.difference(next_defs)
             idx2 -= 1
 
         curr_defs = vertices[idx1].rtl.defs

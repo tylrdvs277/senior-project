@@ -37,19 +37,19 @@ L58_matadd:
 	ldr r3, [r1,r6,lsl#2]
 	
 	
-	ldr r10, [r2,r6,lsl#2]
-	
-	
 	lsl r8, r7, #2
+	
+	
+	ldr r10, [r2,r6,lsl#2]
 	
 	
 	ldr r3, [r3,r8]
 	
 	
-	ldr r10, [r10,r8]
-	
-	
 	ldr r9, [r0,r6,lsl#2]
+	
+	
+	ldr r10, [r10,r8]
 	
 	
 	add r10, r3, r10

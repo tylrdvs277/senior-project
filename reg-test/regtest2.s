@@ -71,9 +71,6 @@ L17_regtest2:
 L21_regtest2:
 
 	
-	ldr r3, [sp,#136]
-	
-	
 	bl getint
 	
 	
@@ -81,6 +78,9 @@ L21_regtest2:
 	
 	
 	bl getint
+	
+	
+	ldr r3, [sp,#136]
 	
 	
 	mov r4, r0
