@@ -222,8 +222,7 @@ def bb_instruction_schedule(vertices: List[Vertex], register_mapping=None):
             first_bb = idx
             idx += 1
         elif basic_block != vertices[idx].rtl.basic_block:
-            if basic_block == 6:
-                local_instruction_schedule(vertices, first_bb, idx - 1)
+            local_instruction_schedule(vertices, first_bb, idx - 1)
             assert(init_length == len(vertices))
             basic_block = -1
         else:

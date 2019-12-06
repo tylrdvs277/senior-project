@@ -119,12 +119,6 @@ L35_regtest2:
 L39_regtest2:
 
 	
-	add r3, r8, r10
-	
-	
-	str r3, [sp,#108]
-	
-	
 	bl getint
 	
 	
@@ -135,6 +129,12 @@ L39_regtest2:
 	
 	
 	mov r2, r0
+	
+	
+	add r3, r8, r10
+	
+	
+	str r3, [sp,#108]
 	
 	
 	cmp r9, r2
@@ -167,12 +167,6 @@ L53_regtest2:
 L56_regtest2:
 
 	
-	sub r3, r9, r2
-	
-	
-	str r3, [sp,#112]
-	
-	
 	add r3, r9, r2
 	
 	
@@ -186,6 +180,12 @@ L56_regtest2:
 	
 	
 	str r3, [sp,#124]
+	
+	
+	sub r3, r9, r2
+	
+	
+	str r3, [sp,#112]
 	
 	
 	ldr r3, [sp,#124]
