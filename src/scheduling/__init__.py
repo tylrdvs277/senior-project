@@ -4,6 +4,7 @@ from queue import PriorityQueue
 from graph import *
 from rtl import *
 from rtl.value import Memory
+import sys
 
 MEM_LATENCY = 4
 DEF_USE_LATENCY = 1
@@ -97,6 +98,42 @@ class Graph:
         del self.__node_to_row[node]
         del self.__node_heuristics[node]
 
+    def __str__(self):
+        rows = []
+        top_row = []
+        divider_row = []
+
+        for row_num in range(self.__dim):
+            top_row.append(
+                "{:<3}".format(
+                    self.__row_to_node[row_num]
+                )
+            )
+        rows.append(
+            "{:>3}: | {}".format(
+                "",
+                " ".join(top_row)
+            )
+        )
+        for _ in range(self.__dim):
+            divider_row.append(
+                "---"
+            )
+        rows.append(
+            "------{}-".format(
+                "-".join(divider_row)
+            )
+        )
+        for row_num in range(self.__dim):
+            rows.append(
+                "{:>3}: | {} |".format(
+                    self.__row_to_node[row_num], 
+                    "   ".join([str(i) for i in self.__matrix[row_num]])
+                )
+            )
+        
+        return "\n".join(rows)
+    
     def is_edge(self, node1: Any, node2: Any):
         assert(node1 in self and node2 in self)
 
@@ -149,7 +186,7 @@ class Graph:
             for idx in range(len(self.__transpose)):
                 if (idx in self.__row_to_node
                         and self.__row_to_node[idx] not in seen
-                        and not any(self.__transpose[idx])):
+                        and self.__transpose[idx].count(None) == self.__dim):
                     seen.add(self.__row_to_node[idx])
                     ready.put(self.__node_heuristics[self.__row_to_node[idx]])
 
@@ -185,7 +222,8 @@ def bb_instruction_schedule(vertices: List[Vertex], register_mapping=None):
             first_bb = idx
             idx += 1
         elif basic_block != vertices[idx].rtl.basic_block:
-            local_instruction_schedule(vertices, first_bb, idx - 1)
+            if basic_block == 6:
+                local_instruction_schedule(vertices, first_bb, idx - 1)
             assert(init_length == len(vertices))
             basic_block = -1
         else:
@@ -232,9 +270,9 @@ def local_instruction_schedule(vertices: List[Vertex], start, end):
                 matrix.add_edge(idx2, idx1, ANTI_LATENCY)
             idx2 -= 1
 
-        curr_defs = vertices[idx1].rtl.get_defs()
+        curr_defs = vertices[idx1].rtl.defs
         if isinstance(vertices[idx1].rtl, Call):
-            curr_defs.update(CALLER_SAVE_REGISTERS)
+            curr_defs = curr_defs.union(CALLER_SAVE_REGISTERS)
 
         idx2 = idx1 + 1
         while idx2 <= end and len(curr_defs) > 0:

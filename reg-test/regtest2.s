@@ -74,12 +74,6 @@ L21_regtest2:
 	ldr r3, [sp,#136]
 	
 	
-	add r3, r3, r5
-	
-	
-	str r3, [sp,#104]
-	
-	
 	bl getint
 	
 	
@@ -90,6 +84,12 @@ L21_regtest2:
 	
 	
 	mov r4, r0
+	
+	
+	add r3, r3, r5
+	
+	
+	str r3, [sp,#104]
 	
 	
 	cmp r7, r4
