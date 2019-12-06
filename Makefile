@@ -21,6 +21,22 @@ assemble: $(TARGET)
 	$(PYTHON) $(TARGET) vecsort/vecsort.cpp.212r.expand vecsort/vecsort.s
 	@echo
 
+assemble_m3: $(TARGET)
+	@echo "Building .s files with no scheduling"
+	@echo
+	@echo "matadd, dest matadd/matadd_m3.s"
+	NO_SCHEDULE=1 $(PYTHON) $(TARGET) matadd/matadd.cpp.212r.expand matadd/matadd_m3.s
+	@echo
+	@echo "regtest1, dest reg-test/regtest1_m3.s"
+	NO_SCHEDULE=1 $(PYTHON) $(TARGET) reg-test/regtest1.c.212r.expand reg-test/regtest1_m3.s
+	@echo
+	@echo "regtest2, dest reg-test/regtest2_m3.s"
+	NO_SCHEDULE=1 $(PYTHON) $(TARGET) reg-test/regtest2.c.212r.expand reg-test/regtest2_m3.s
+	@echo
+	@echo "vecsort, dest vecsort/vecsort_m3.s"
+	NO_SCHEDULE=1 $(PYTHON) $(TARGET) vecsort/vecsort.cpp.212r.expand vecsort/vecsort_m3.s
+	@echo
+
 build: assemble
 	@echo "Compiling executables"
 	@echo
