@@ -26,4 +26,4 @@ run:
 	diff -q outfile vector.sorted
 
 clean:
-	rm -f $(OBJECTS) $(BIN)
+	rm -f $(OBJECTS) $(BIN) outfile

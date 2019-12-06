@@ -3,7 +3,7 @@
 regtest1:
 	mov fp, sp
 	push {r4, r5, r6, r7, r8, r9, r10, lr}
-	sub sp, sp, #88
+	sub sp, sp, #92
 	
 	mov r9, r0
 	
@@ -20,10 +20,7 @@ regtest1:
 	bl getint
 	
 	
-	mov r3, r0
-	
-	
-	str r3, [sp,#80]
+	mov r7, r0
 	
 	
 	ldr r3, [sp,#76]
@@ -32,22 +29,25 @@ regtest1:
 	add r3, r3, r9
 	
 	
-	str r3, [sp,#84]
+	str r3, [sp,#80]
 	
 	
-	ldr r3, [sp,#80]
+	add r3, r7, r9
 	
 	
-	add r5, r3, r9
+	str r3, [sp,#88]
 	
 	
-	ldr r3, [sp,#84]
+	ldr r10, [sp,#80]
 	
 	
-	add r3, r3, r5
+	ldr r3, [sp,#88]
 	
 	
-	str r3, [sp,#0]
+	add r3, r10, r3
+	
+	
+	str r3, [sp,#48]
 	
 	
 	bl getint
@@ -59,76 +59,76 @@ regtest1:
 	bl getint
 	
 	
-	mov r7, r0
+	mov r8, r0
 	
 	
 	add r4, r6, #1
 	
 	
-	add r10, r7, #-1
+	add r10, r8, #-1
 	
 	
 	add r3, r4, r10
 	
 	
-	str r3, [sp,#4]
+	str r3, [sp,#52]
 	
 	
 	bl getint
 	
 	
-	mov r8, r0
+	mov r5, r0
 	
 	
 	bl getint
 	
 	
-	mov r2, r0
+	add r3, r5, r0
 	
 	
-	add r0, r8, r2
+	str r3, [sp,#84]
 	
 	
-	ldr r1, [sp,#76]
+	ldr r3, [sp,#76]
 	
 	
-	ldr r3, [sp,#80]
-	
-	
-	add r3, r1, r3
+	add r3, r3, r7
 	
 	
 	str r3, [sp,#8]
 	
 	
-	ldr r1, [sp,#8]
+	ldr r7, [sp,#8]
 	
 	
-	ldr r3, [sp,#84]
+	ldr r3, [sp,#80]
 	
 	
-	add r3, r1, r3
+	add r3, r7, r3
 	
 	
 	str r3, [sp,#12]
 	
 	
-	ldr r3, [sp,#12]
+	ldr r7, [sp,#12]
 	
 	
-	add r3, r3, r5
+	ldr r3, [sp,#88]
+	
+	
+	add r3, r7, r3
 	
 	
 	str r3, [sp,#16]
 	
 	
-	ldr r5, [sp,#0]
+	ldr r7, [sp,#16]
 	
 	
-	ldr r3, [sp,#16]
+	ldr r3, [sp,#48]
 	
 	
-	add r3, r3, r5
+	add r3, r7, r3
 	
 	
 	str r3, [sp,#20]
@@ -146,7 +146,7 @@ regtest1:
 	ldr r3, [sp,#24]
 	
 	
-	add r3, r3, r7
+	add r3, r3, r8
 	
 	
 	str r3, [sp,#28]
@@ -170,43 +170,7 @@ regtest1:
 	str r3, [sp,#36]
 	
 	
-	ldr r10, [sp,#4]
-	
-	
-	ldr r3, [sp,#36]
-	
-	
-	add r3, r3, r10
-	
-	
-	str r3, [sp,#40]
-	
-	
-	ldr r3, [sp,#40]
-	
-	
-	add r3, r3, r8
-	
-	
-	str r3, [sp,#44]
-	
-	
-	ldr r3, [sp,#44]
-	
-	
-	add r3, r3, r2
-	
-	
-	str r3, [sp,#48]
-	
-	
-	sub r3, r8, r2
-	
-	
-	str r3, [sp,#52]
-	
-	
-	ldr r10, [sp,#48]
+	ldr r10, [sp,#36]
 	
 	
 	ldr r3, [sp,#52]
@@ -215,25 +179,34 @@ regtest1:
 	add r3, r10, r3
 	
 	
-	str r3, [sp,#56]
+	str r3, [sp,#72]
 	
 	
-	ldr r3, [sp,#56]
+	ldr r3, [sp,#72]
+	
+	
+	add r3, r3, r5
+	
+	
+	str r3, [sp,#44]
+	
+	
+	ldr r3, [sp,#44]
 	
 	
 	add r3, r3, r0
 	
 	
-	str r3, [sp,#60]
+	str r3, [sp,#56]
 	
 	
-	add r3, r9, r0
+	sub r3, r5, r0
 	
 	
 	str r3, [sp,#64]
 	
 	
-	ldr r10, [sp,#60]
+	ldr r10, [sp,#56]
 	
 	
 	ldr r3, [sp,#64]
@@ -242,19 +215,52 @@ regtest1:
 	add r3, r10, r3
 	
 	
+	str r3, [sp,#60]
+	
+	
+	ldr r10, [sp,#60]
+	
+	
+	ldr r3, [sp,#84]
+	
+	
+	add r3, r10, r3
+	
+	
 	str r3, [sp,#68]
+	
+	
+	ldr r3, [sp,#84]
+	
+	
+	add r3, r9, r3
+	
+	
+	str r3, [sp,#40]
+	
+	
+	ldr r10, [sp,#40]
 	
 	
 	ldr r3, [sp,#68]
 	
 	
-	str r3, [sp,#72]
+	add r3, r3, r10
 	
 	
-	ldr r3, [sp,#72]
+	str r3, [sp,#4]
+	
+	
+	ldr r3, [sp,#4]
+	
+	
+	str r3, [sp,#0]
+	
+	
+	ldr r3, [sp,#0]
 	
 	
 	mov r0, r3
 	
-	add sp, sp, #88
+	add sp, sp, #92
 	pop {r4, r5, r6, r7, r8, r9, r10, pc}
