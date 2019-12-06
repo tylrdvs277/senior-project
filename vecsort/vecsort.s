@@ -4,13 +4,13 @@ vecsort:
 	mov fp, sp
 	push {r4, r5, r6, r7, r8, r9, r10, lr}
 	
-	mov r3, r0
-	
-	
 	mov r10, r1
 	
 	
 	add r4, r10, #-1
+	
+	
+	mov r3, r0
 	
 	
 	cmp r4, #0
