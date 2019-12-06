@@ -24,20 +24,33 @@ assemble: $(TARGET)
 assemble_m3: $(TARGET)
 	@echo "Building .s files with no scheduling"
 	@echo
-	@echo "matadd, dest matadd/matadd_m3.s"
-	NO_SCHEDULE=1 $(PYTHON) $(TARGET) matadd/matadd.cpp.212r.expand matadd/matadd_m3.s
+	@echo "matadd, dest matadd/matadd.s"
+	NO_SCHEDULE=1 $(PYTHON) $(TARGET) matadd/matadd.cpp.212r.expand matadd/matadd.s
 	@echo
-	@echo "regtest1, dest reg-test/regtest1_m3.s"
-	NO_SCHEDULE=1 $(PYTHON) $(TARGET) reg-test/regtest1.c.212r.expand reg-test/regtest1_m3.s
+	@echo "regtest1, dest reg-test/regtest1.s"
+	NO_SCHEDULE=1 $(PYTHON) $(TARGET) reg-test/regtest1.c.212r.expand reg-test/regtest1.s
 	@echo
-	@echo "regtest2, dest reg-test/regtest2_m3.s"
-	NO_SCHEDULE=1 $(PYTHON) $(TARGET) reg-test/regtest2.c.212r.expand reg-test/regtest2_m3.s
+	@echo "regtest2, dest reg-test/regtest2.s"
+	NO_SCHEDULE=1 $(PYTHON) $(TARGET) reg-test/regtest2.c.212r.expand reg-test/regtest2.s
 	@echo
-	@echo "vecsort, dest vecsort/vecsort_m3.s"
-	NO_SCHEDULE=1 $(PYTHON) $(TARGET) vecsort/vecsort.cpp.212r.expand vecsort/vecsort_m3.s
+	@echo "vecsort, dest vecsort/vecsort.s"
+	NO_SCHEDULE=1 $(PYTHON) $(TARGET) vecsort/vecsort.cpp.212r.expand vecsort/vecsort.s
 	@echo
 
 build: assemble
+	@echo "Compiling executables"
+	@echo
+	@echo "Build matadd in matadd/"
+	@$(MAKE) -C matadd -f Makefile.s
+	@echo
+	@echo "Build regtest in reg-test/"
+	@$(MAKE) -C reg-test -f Makefile
+	@echo
+	@echo "Build vecsort in vecsort/"
+	@$(MAKE) -C vecsort -f Makefile.s
+	@echo
+
+build_m3: assemble_m3
 	@echo "Compiling executables"
 	@echo
 	@echo "Build matadd in matadd/"
