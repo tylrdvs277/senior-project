@@ -5,7 +5,7 @@ regtest2:
 	push {r4, r5, r6, r7, r8, r9, r10, lr}
 	sub sp, sp, #140
 	
-	bl getint
+	mov r6, r0
 	
 	
 	bl getint
@@ -14,10 +14,10 @@ regtest2:
 	mov r3, r0
 	
 	
-	mov r6, r0
-	
-	
 	str r3, [sp,#128]
+	
+	
+	bl getint
 	
 	
 	mov r3, r0
@@ -77,10 +77,10 @@ L21_regtest2:
 	bl getint
 	
 	
-	bl getint
-	
-	
 	mov r7, r0
+	
+	
+	bl getint
 	
 	
 	mov r4, r0
@@ -122,10 +122,10 @@ L39_regtest2:
 	bl getint
 	
 	
-	bl getint
-	
-	
 	mov r9, r0
+	
+	
+	bl getint
 	
 	
 	mov r2, r0
@@ -149,10 +149,10 @@ L53_regtest2:
 	bl getint
 	
 	
-	bl getint
-	
-	
 	mov r9, r0
+	
+	
+	bl getint
 	
 	
 	mov r2, r0

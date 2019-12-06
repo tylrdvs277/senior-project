@@ -223,7 +223,7 @@ def local_instruction_schedule(vertices: List[Vertex], start, end):
         while idx2 >= start and len(curr_defs) > 0:
             next_defs = vertices[idx2].rtl.defs
             next_uses = vertices[idx2].rtl.uses
-            if isinstance(vertices[idx1].rtl, Call):
+            if isinstance(vertices[idx2].rtl, Call):
                 next_defs = next_defs.union(CALLER_SAVE_REGISTERS)
                 next_uses = next_uses.union(CALLER_SAVE_REGISTERS)
 
@@ -240,7 +240,7 @@ def local_instruction_schedule(vertices: List[Vertex], start, end):
         while idx2 <= end and len(curr_defs) > 0:
             next_defs = vertices[idx2].rtl.defs
             next_uses = vertices[idx2].rtl.uses
-            if isinstance(vertices[idx1].rtl, Call):
+            if isinstance(vertices[idx2].rtl, Call):
                 next_defs = next_defs.union(CALLER_SAVE_REGISTERS)
                 next_uses = next_uses.union(CALLER_SAVE_REGISTERS)
 
