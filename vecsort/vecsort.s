@@ -4,13 +4,13 @@ vecsort:
 	mov fp, sp
 	push {r4, r5, r6, r7, r8, r9, r10, lr}
 	
+	mov r3, r0
+	
+	
 	mov r10, r1
 	
 	
 	add r4, r10, #-1
-	
-	
-	mov r3, r0
 	
 	
 	cmp r4, #0
@@ -61,7 +61,7 @@ L52_vecsort:
 	ldr r9, [r8]
 	
 	
-	ldr r10, [r8,#2]
+	ldr r10, [r8,#4]
 	
 	
 	cmp r9, r10
@@ -73,7 +73,7 @@ L52_vecsort:
 	str r10, [r8]
 	
 	
-	str r9, [r8,#2]
+	str r9, [r8,#4]
 	
 	
 	b L60_vecsort

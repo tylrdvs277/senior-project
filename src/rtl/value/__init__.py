@@ -275,7 +275,7 @@ class BinaryValue(Value):
 
     def update_virt_reg(self, reg: Value, prime: int):
         self.value1.update_virt_reg(reg, prime)
-        self.value2.update_virt_reg(reg, prime)        
+        self.value2.update_virt_reg(reg, prime)
 
 
 class Compare(BinaryValue):
@@ -336,13 +336,15 @@ class Arithmetic(BinaryValue):
             if self.arith_op == Arithmetic.ArithmeticOp.PLUS:
                 if isinstance(self.value1, Register):
                     repr = "{},{}".format(
-                        self.value1.asm(register_mapping, True),
-                        self.value2.asm(register_mapping, True)
+                        self.value1.asm(register_mapping),
+                        self.value2.asm(register_mapping, isinstance(
+                            self.value1, Arithmetic))
                     )
                 else:
                     repr = "{},{}".format(
-                        self.value2.asm(register_mapping, True),
-                        self.value1.asm(register_mapping, True)
+                        self.value2.asm(register_mapping),
+                        self.value1.asm(register_mapping, isinstance(
+                            self.value1, Arithmetic))
                     )
             elif self.arith_op == Arithmetic.ArithmeticOp.MULT:
                 assert(
