@@ -32,7 +32,7 @@ def main():
     vertices = g.generate_cfg(rtls)
     g.identify_loops(vertices)
 
-    i.bb_instruction_schedule(vertices, None)
+    #i.bb_instruction_schedule(vertices, None)
 
     colorable = False
     while not colorable:
@@ -49,7 +49,7 @@ def main():
             l.spill_register(vertices, spill_reg)
 
     register_allocation = l.color_to_register(colors)
-    i.bb_instruction_schedule(vertices, register_allocation)
+    #i.bb_instruction_schedule(vertices, register_allocation)
     rtls = [vertex.rtl for vertex in vertices]
     
     asm = r.generate_assembly(rtls, register_allocation, spilled)
