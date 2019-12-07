@@ -5,6 +5,7 @@ from queue import Queue
 
 from rtl import *
 
+# Control flow structures
 class Vertex:
 
     def __init__(self, rtl: RTL):
@@ -68,6 +69,7 @@ class Edge:
         end.in_edges.append(edge)
 
 
+# Generates an instruction local CFG
 def generate_cfg(rtls: List[RTL]):
     vertex = None
     next_vertex = None
@@ -93,6 +95,7 @@ def generate_cfg(rtls: List[RTL]):
     return vertices
 
 
+# Identify how many an instruction is in (used to id spill candidates)
 def identify_loops(vertices: List[Vertex]):
     queue = Queue()
 

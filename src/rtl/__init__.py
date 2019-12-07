@@ -361,6 +361,7 @@ class Store(Stack):
         ]
 
 
+# Generates the assembly language as a string
 def generate_assembly(rtls: List[RTL], register_mapping: Dict[Register, int], spilled: List[Register]):
     asm = [
         ".arch armv7a",

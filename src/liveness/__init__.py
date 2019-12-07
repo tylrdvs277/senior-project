@@ -8,6 +8,7 @@ from rtl.registers import ArchitectureRegisters as AR
 NUM_COLORS = len(AR.REAL_REGISTERS_NUM)
 COLORS = set(i for i in range(NUM_COLORS))
 
+# Liveness interference matrix
 class Matrix:
 
     def __init__(self):
@@ -104,6 +105,7 @@ class Matrix:
         return node in self.node_to_row
 
 
+# Compute live in and live out until it converges
 def compute_liveness(vertices: List[Vertex]):
     iterate = True
 
@@ -121,6 +123,7 @@ def compute_liveness(vertices: List[Vertex]):
                 iterate = True
 
 
+# Builds the interference matrix using liveness
 def interference_matrix(vertices: List[Vertex]):
     matrix = Matrix()
 
@@ -149,6 +152,7 @@ def interference_matrix(vertices: List[Vertex]):
     return matrix
 
 
+# Attempts to color the graph
 def color_graph(matrix: Matrix):
     matrix.init_coloring(NUM_COLORS)
     colorable = True
@@ -174,6 +178,7 @@ def color_graph(matrix: Matrix):
     return node_to_color
 
 
+# ID a spill candidate
 def spill_candidate(vertices: List[Vertex]):
     reg_spill_factor = dict()
 
@@ -198,6 +203,7 @@ def spill_candidate(vertices: List[Vertex]):
     return min_reg_copy
 
 
+# Spill the spill candidate
 def spill_register(vertices: List[Vertex], reg: VirtualRegister):
     idx = 0
     while idx < len(vertices):
@@ -238,6 +244,7 @@ def spill_register(vertices: List[Vertex], reg: VirtualRegister):
             idx += 1
 
 
+# Maps a color to architecture register
 def color_to_register(color_mapping: Dict[Register, int]):
     color_register_mapping = dict()
     register_mapping = dict()

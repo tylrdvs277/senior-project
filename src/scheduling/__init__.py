@@ -11,6 +11,7 @@ DEF_USE_LATENCY = 1
 ANTI_LATENCY = 0
 
 
+# The class irepresents a dependency DAG
 class Graph:
 
     class Heuristic:
@@ -97,42 +98,6 @@ class Graph:
         del self.__row_to_node[row_num]
         del self.__node_to_row[node]
         del self.__node_heuristics[node]
-
-    def __str__(self):
-        rows = []
-        top_row = []
-        divider_row = []
-
-        for row_num in range(self.__dim):
-            top_row.append(
-                "{:<3}".format(
-                    self.__row_to_node[row_num]
-                )
-            )
-        rows.append(
-            "{:>3}: | {}".format(
-                "",
-                " ".join(top_row)
-            )
-        )
-        for _ in range(self.__dim):
-            divider_row.append(
-                "---"
-            )
-        rows.append(
-            "------{}-".format(
-                "-".join(divider_row)
-            )
-        )
-        for row_num in range(self.__dim):
-            rows.append(
-                "{:>3}: | {} |".format(
-                    self.__row_to_node[row_num], 
-                    "   ".join([str(i) for i in self.__matrix[row_num]])
-                )
-            )
-        
-        return "\n".join(rows)
     
     def is_edge(self, node1: Any, node2: Any):
         assert(node1 in self and node2 in self)
@@ -154,6 +119,7 @@ class Graph:
 
         return topo_sort
 
+    # Calculate the "d" value for each node
     def heuristics(self):
         visited = set()
         topo_sort = []
@@ -176,6 +142,7 @@ class Graph:
                         )
                     )
 
+    # Build the schedule list using a READY list
     def schedule(self):
         ready = PriorityQueue()
         seen = set()
@@ -203,6 +170,7 @@ class Graph:
         return node in self.__node_to_row
 
 
+# Divides code into basic blocks
 def bb_instruction_schedule(vertices: List[Vertex], register_mapping=None):
     init_length = len(vertices)
 
@@ -229,6 +197,7 @@ def bb_instruction_schedule(vertices: List[Vertex], register_mapping=None):
             idx += 1
 
 
+# Builds the DAG for a basic block and reschedules the instructions
 def local_instruction_schedule(vertices: List[Vertex], start, end):
 
     if isinstance(vertices[start].rtl, Label):
