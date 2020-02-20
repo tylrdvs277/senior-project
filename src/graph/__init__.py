@@ -8,31 +8,40 @@ from rtl import *
 # Control flow structures
 class Vertex:
 
-    def __init__(self, rtl: RTL):
-        self.in_edges = []
-        self.out_edges = []
+    def __init__(
+        self, 
+        rtl: RTL
+    ) -> None:
+        self.in_edges: List[Edge] = []
+        self.out_edges: List[Edge] = []
 
-        self.rtl = rtl
+        self.rtl: RTL = rtl
 
-        self.visited = False
-        self.loop = 0
+        self.visited: bool = False
+        self.loop: int = 0
 
-        self.live_in = None
-        self.live_out = None
+        self.live_in: Set[Register] = set()
+        self.live_out: Set[Register] = set()
 
-    def init(self):
-        self.live_out = set()
-        self.live_in = set()
+    def init(
+        self
+    ) -> None:
+        self.live_out.clear()
+        self.live_in.clear()
 
-    def compute_live_out(self):
+    def compute_live_out(
+        self
+    ) -> None:
         self.live_out = set()
 
         for edge in self.out_edges:
             self.live_out = self.live_out.union(edge.end.live_in)
 
-    def compute_live_in(self) -> bool:
+    def compute_live_in(
+        self
+    ) -> bool:
         temp = self.rtl.uses.union(self.live_out.difference(self.rtl.defs))
-        changed = False
+        changed: bool = False
 
         if temp != self.live_in:
             self.live_in = temp
@@ -44,20 +53,34 @@ class Vertex:
 class Edge:
 
     class EdgeType(Enum):
-        BASIC_BLOCK = 1
-        SEQUENTIAL = 2
-        JUMP = 3
+        BASIC_BLOCK: int = 1
+        SEQUENTIAL: int = 2
+        JUMP: int = 3
 
-    def __init__(self, start: Vertex, end: Vertex, edge_type: EdgeType, src_bb: int, dest_bb: int):
-        self.start = start
-        self.end = end
-        self.edge_type = edge_type
-        self.src_bb = src_bb
-        self.dest_bb = dest_bb
-        self.visited = False
+    def __init__(
+        self, 
+        start: Vertex, 
+        end: Vertex, 
+        edge_type: EdgeType, 
+        src_bb: int, 
+        dest_bb: int
+    ) -> None:
+        self.start: Vertex = start
+        self.end: Vertex = end
+
+        self.edge_type: Edge.EdgeType = edge_type
+
+        self.src_bb: int = src_bb
+        self.dest_bb: int = dest_bb
+        
+        self.visited: bool = False
 
     @staticmethod
-    def link(start: Vertex, end: Vertex, edge_type: EdgeType):
+    def link(
+        start: Vertex, 
+        end: Vertex, 
+        edge_type: EdgeType
+    ):
         edge = Edge(
             start,
             end,
@@ -70,12 +93,13 @@ class Edge:
 
 
 # Generates an instruction local CFG
-def generate_cfg(rtls: List[RTL]):
-    vertex = None
-    next_vertex = None
-    vertices = [Vertex(rtl) for rtl in rtls]
-    insn_reference = dict(((vertex.rtl.this_insn, vertex)
-                           for vertex in vertices))
+def generate_cfg(
+    rtls: List[RTL]
+) -> List[Vertex]:
+    vertex: Vertex
+    next_vertex: Vertex
+    vertices: List[Vertex] = [Vertex(rtl) for rtl in rtls]
+    insn_reference: Dict[int,Vertex] = {vertex.rtl.this_insn: vertex for vertex in vertices}
 
     for idx in range(len(vertices) - 1):
         vertex = vertices[idx]
@@ -95,9 +119,11 @@ def generate_cfg(rtls: List[RTL]):
     return vertices
 
 
-# Identify how many an instruction is in (used to id spill candidates)
-def identify_loops(vertices: List[Vertex]):
-    queue = Queue()
+# TODO: replace with dominator post-dom
+def identify_loops(
+    vertices: List[Vertex]
+) -> None:
+    queue: Queue[Vertex] = Queue()
 
     for vertex in vertices:
         vertex.loop = 0

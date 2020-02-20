@@ -362,7 +362,11 @@ class Store(Stack):
 
 
 # Generates the assembly language as a string
-def generate_assembly(rtls: List[RTL], register_mapping: Dict[Register, int], spilled: List[Register]):
+def generate_assembly(
+    rtls: List[RTL], 
+    register_mapping: Dict[Register,RealRegister], 
+    spilled: List[Register]
+) -> str:
     asm = [
         ".arch armv7a",
         ".global {}".format(func_name),
@@ -375,8 +379,10 @@ def generate_assembly(rtls: List[RTL], register_mapping: Dict[Register, int], sp
 
     callee_save_regs = set()
     for (sym_reg, real_reg) in register_mapping.items():
-        if (sym_reg not in REAL_REGISTERS
-                and real_reg in CALLEE_SAVE_REGISTERS):
+        if (
+            sym_reg not in REAL_REGISTERS
+            and real_reg in CALLEE_SAVE_REGISTERS
+        ):
             callee_save_regs.add(real_reg)
 
     callee_save_regs = list(callee_save_regs)

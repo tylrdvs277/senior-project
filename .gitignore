@@ -33,3 +33,10 @@
 
 # Python
 __pycache__
+*.pyc
+
+# Dev
+venv
+
+# Other
+.*

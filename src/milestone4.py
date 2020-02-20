@@ -1,6 +1,6 @@
 from os import getenv
-from sys import argv, exit
-from typing import List
+from sys import argv
+from typing import List, Tuple, Any, Optional, Dict
 
 import sexp as s
 import rtl as r
@@ -8,23 +8,30 @@ import graph as g
 import liveness as l
 import scheduling as i
 
+class IllegalArgumentException(Exception):
+    pass
 
-def parse_args(args: List[str]):
-
+def parse_args(
+    args: List[str]
+) -> Tuple[str,str]:
     try:
         _, in_file, out_file = args
     except ValueError:
-        print("Usage: {} in_file out_file".format(args[0]))
-        exit(1)
+        raise IllegalArgumentException("Usage: {} in_file out_file".format(args[0]))
 
     return in_file, out_file
 
 
-def main():
-    rtls = []
-    spilled = []
+def main(
+) -> None:
+    rtls: List[r.RTL] = []
+    spilled: List[r.Register] = []
+
+    in_file: str
+    out_file: str
     in_file, out_file = parse_args(argv)
 
+    rtl_sexps: List[List[Any]]
     r.func_name, rtl_sexps = s.read_sexp(in_file)
     for rtl_sexp in rtl_sexps:
         rtls += r.RTL.factory(rtl_sexp)
@@ -35,7 +42,9 @@ def main():
     if not getenv("NO_SCHEDULE"):
         i.bb_instruction_schedule(vertices, None)
 
-    colorable = False
+    colorable: bool = False
+    colors: Optional[Dict[r.Register,int]]
+    matrix: l.Matrix[r.Register]
     while not colorable:
 
         l.compute_liveness(vertices)
@@ -45,16 +54,16 @@ def main():
         if colors is not None:
             colorable = True
         else:
-            spill_reg = l.spill_candidate(vertices)
+            spill_reg: r.VirtualRegister = l.spill_candidate(vertices)
             spilled.append(spill_reg)
             l.spill_register(vertices, spill_reg)
 
-    register_allocation = l.color_to_register(colors)
+    register_allocation: Dict[r.Register,r.RealRegister] = l.color_to_register(colors)
     if not getenv("NO_SCHEDULE"):
         i.bb_instruction_schedule(vertices, register_allocation)
+
     rtls = [vertex.rtl for vertex in vertices]
-    
-    asm = r.generate_assembly(rtls, register_allocation, spilled)
+    asm: str = r.generate_assembly(rtls, register_allocation, spilled)
 
     with open(out_file, "w") as f:
         f.write(asm)
