@@ -177,11 +177,13 @@ def interference_matrix(
 
     return matrix
 
+class UncolorableError(ValueError):
+    pass
 
 # Attempts to color the graph
 def color_graph(
     matrix: Matrix
-) -> Optional[Dict[Register,int]]:
+) -> Dict[Register,int]:
     matrix.init_coloring(NUM_COLORS)
     colorable: bool = True
     node_to_color: Dict[Register,int] = dict()
@@ -202,7 +204,7 @@ def color_graph(
             node_to_color[node] = color_candidates.pop()
 
     if not colorable:
-        return None
+        raise UncolorableError
 
     return node_to_color
 

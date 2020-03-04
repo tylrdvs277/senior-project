@@ -8,7 +8,7 @@ import graph as g
 import liveness as l
 import scheduling as i
 
-class IllegalArgumentException(Exception):
+class IllegalArgumentError(Exception):
     pass
 
 def parse_args(
@@ -17,7 +17,7 @@ def parse_args(
     try:
         _, in_file, out_file = args
     except ValueError:
-        raise IllegalArgumentException("Usage: {} in_file out_file".format(args[0]))
+        raise IllegalArgumentError("Usage: {} in_file out_file".format(args[0]))
 
     return in_file, out_file
 
@@ -43,17 +43,19 @@ def main(
         i.bb_instruction_schedule(vertices, None)
 
     colorable: bool = False
-    colors: Optional[Dict[r.Register,int]]
+    colors: Dict[r.Register,int]
     matrix: l.Matrix[r.Register]
     while not colorable:
 
         l.compute_liveness(vertices)
         matrix = l.interference_matrix(vertices)
-        colors = l.color_graph(matrix)
         
-        if colors is not None:
+        try:
+            colors = l.color_graph(matrix)
+        except l.UncolorableError:
             colorable = True
-        else:
+        
+        if not colorable:
             spill_reg: r.VirtualRegister = l.spill_candidate(vertices)
             spilled.append(spill_reg)
             l.spill_register(vertices, spill_reg)

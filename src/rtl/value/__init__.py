@@ -1,5 +1,5 @@
 
-from typing import List, Any, Set
+from typing import List, Any, Set, Optional
 from enum import Enum
 from copy import deepcopy
 
@@ -28,8 +28,10 @@ class Type(Enum):
 class Value:
 
     @staticmethod
-    def factory(value_sexp: List[Any]):
-        value_repr = None
+    def factory(
+        value_sexp: List[Any]
+    ) -> Value:
+        value_repr: Value
         value_type = value_sexp[0].lower()
 
         if "const" in value_type:
@@ -50,13 +52,21 @@ class Value:
 
         return value_repr
 
-    def get_defs(self):
+    def get_defs(
+        self
+    ):
         return set()
 
-    def get_uses(self):
+    def get_uses(
+        self
+    ):
         return set()
 
-    def update_virt_reg(self, reg, prime):
+    def update_virt_reg(
+        self, 
+        reg, 
+        prime
+    ):
         pass
 
 
@@ -71,21 +81,28 @@ class Register(Value):
 
         return register_mapping[self].asm(register_mapping)
 
-    def __repr__(self):
+    def __repr__(
+        self
+    ) -> str:
         return "{}({})".format(self.__class__.__name__, str(self.number))
 
     @staticmethod
-    def factory(reg_sexp: List[Any]):
-        reg = None
-        reg_label, number, *rest = reg_sexp
-        reg_type = Type.translate(reg_label)
-        repr = None if len(rest) == 0 else rest[0]
+    def factory(
+        reg_sexp: List[Any]
+    ) -> Value:
+        reg: Value
+        reg_label, number_str, *rest = reg_sexp
+        number: int = int(number_str)
+        reg_type = Type.translate(str(reg_label))
+        repr: Optional[str] = None if len(rest) == 0 else str(rest[0])
 
         if number == AR.CONDITION_CODES:
             reg = ConditionCodes(reg_type, number)
-        elif (number in AR.REAL_REGISTERS_NUM
-                or number == AR.ARG_POINTER):
-            reg = RealRegister.factory(reg_type, number, repr)
+        elif (
+            number in AR.REAL_REGISTERS_NUM
+            or number == AR.ARG_POINTER
+        ):
+            reg = RealRegister.factory(reg_sexp)
         elif repr is None or isinstance(repr, List):
             reg = VirtualRegister(reg_type, number)
         else:
@@ -93,10 +110,15 @@ class Register(Value):
 
         return reg
 
-    def __hash__(self):
+    def __hash__(
+        self
+    ) -> int:
         return hash(self.number)
 
-    def __eq__(self, other):
+    def __eq__(
+        self, 
+        other
+    ) -> bool:
         return (
             self.__class__ == other.__class__
             and self.number == other.number
@@ -105,10 +127,15 @@ class Register(Value):
 
 class RealRegister(Register):
 
-    def __init__(self, reg_type: Type, number: int, repr: str):
+    def __init__(
+        self, 
+        reg_type: Type, 
+        number: int, 
+        repr: Optional[str]
+    ) -> None:
         assert(number in AR.REAL_REGISTERS_NUM or number == AR.ARG_POINTER)
         super(RealRegister, self).__init__(reg_type, number)
-        self.repr = repr
+        self.repr: Optional[str] = repr
 
     def asm(self, register_mapping, mem=False):
         repr = None
@@ -120,12 +147,21 @@ class RealRegister(Register):
 
         return repr
 
-    def __lt__(self, other):
+    def __lt__(
+        self, 
+        other: RealRegister
+    ) -> bool:
         return self.number < other.number
 
     @staticmethod
-    def factory(reg_type: Type, number: int, repr: str):
-        reg = None
+    def factory(
+        reg_sexp: List[Any]
+    ) -> Value:
+        reg: Value
+        reg_label, number_str, *rest = reg_sexp
+        number: int = int(number_str)
+        reg_type = Type.translate(str(reg_label))
+        repr: Optional[str] = None if len(rest) == 0 else str(rest[0])
 
         if number in AR.CALLER_SAVE_REGISTERS_NUM:
             reg = CallerSaveRegister(reg_type, number, repr)
@@ -137,7 +173,12 @@ class RealRegister(Register):
 
 class CallerSaveRegister(RealRegister):
 
-    def __init__(self, reg_type: Type, number: int, repr: str):
+    def __init__(
+        self, 
+        reg_type: Type, 
+        number: int, 
+        repr: Optional[str]
+    ) -> None:
         assert(number in AR.CALLER_SAVE_REGISTERS_NUM)
         super(CallerSaveRegister, self).__init__(reg_type, number, repr)
 
@@ -329,8 +370,12 @@ class Arithmetic(BinaryValue):
         super(Arithmetic, self).__init__(arith_type, value1, value2)
         self.arith_op = arith_op
 
-    def asm(self, register_mapping, mem=False):
-        repr = None
+    def asm(
+        self, 
+        register_mapping, 
+        mem=False
+    ) -> str:
+        repr: str
 
         if mem:
             if self.arith_op == Arithmetic.ArithmeticOp.PLUS:
@@ -370,7 +415,9 @@ class Arithmetic(BinaryValue):
         return repr
 
     @staticmethod
-    def factory(arith_sexp: List[Any]):
+    def factory(
+        arith_sexp: List[Any]
+    ):
         op_str, value1_sexp, value2_sexp = arith_sexp
         arith_op = Arithmetic.ArithmeticOp.translate(op_str)
         arith_type = Type.translate(op_str)
