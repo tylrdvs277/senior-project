@@ -1,9 +1,12 @@
 
-from typing import List, Any, Set, Optional
+from typing import List, Any, Set, Optional, Dict, cast, NewType
 from enum import Enum
 from copy import deepcopy
 
 from rtl.registers import ArchitectureRegisters as AR
+
+
+RegMap = NewType('RegMap', Dict['Register','RealRegister'])
 
 
 class Type(Enum):
@@ -11,7 +14,9 @@ class Type(Enum):
     CC = 2
 
     @staticmethod
-    def translate(type: str):
+    def translate(
+        type: str
+    ) -> 'Type':
         ret = None
         type = type.lower()
 
@@ -30,9 +35,9 @@ class Value:
     @staticmethod
     def factory(
         value_sexp: List[Any]
-    ) -> Value:
+    ) -> 'Value':
         value_repr: Value
-        value_type = value_sexp[0].lower()
+        value_type: str = str(value_sexp[0].lower())
 
         if "const" in value_type:
             value_repr = Const.factory(value_sexp)
@@ -54,29 +59,44 @@ class Value:
 
     def get_defs(
         self
-    ):
+    ) -> Set['Register']:
         return set()
 
     def get_uses(
         self
-    ):
+    ) -> Set['Register']:
         return set()
+
+    def asm(
+        self, 
+        register_mapping: RegMap, 
+        mem: bool=False
+    ) -> str:
+        pass
 
     def update_virt_reg(
         self, 
-        reg, 
-        prime
-    ):
+        reg: 'Value', 
+        prime: int
+    ) -> None:
         pass
 
 
 class Register(Value):
 
-    def __init__(self, reg_type: Type, number: int):
-        self.reg_type = reg_type
-        self.number = number
+    def __init__(
+        self, 
+        reg_type: Type, 
+        number: int
+    ) -> None:
+        self.reg_type: Type = reg_type
+        self.number: int = number
 
-    def asm(self, register_mapping, mem=False):
+    def asm(
+        self, 
+        register_mapping: RegMap, 
+        mem: bool=False
+    ) -> str:
         assert(self in register_mapping)
 
         return register_mapping[self].asm(register_mapping)
@@ -94,7 +114,7 @@ class Register(Value):
         reg_label, number_str, *rest = reg_sexp
         number: int = int(number_str)
         reg_type = Type.translate(str(reg_label))
-        repr: Optional[str] = None if len(rest) == 0 else str(rest[0])
+        repr: Optional[List[Any]] = None if len(rest) == 0 else rest[0]
 
         if number == AR.CONDITION_CODES:
             reg = ConditionCodes(reg_type, number)
@@ -117,11 +137,11 @@ class Register(Value):
 
     def __eq__(
         self, 
-        other
+        other: object
     ) -> bool:
         return (
             self.__class__ == other.__class__
-            and self.number == other.number
+            and self.number == cast(Register,other).number
         )
 
 
@@ -137,8 +157,12 @@ class RealRegister(Register):
         super(RealRegister, self).__init__(reg_type, number)
         self.repr: Optional[str] = repr
 
-    def asm(self, register_mapping, mem=False):
-        repr = None
+    def asm(
+        self, 
+        register_mapping: RegMap, 
+        mem: bool=False
+    ) -> str:
+        repr: str
 
         if self.number == AR.ARG_POINTER:
             repr = AR.FP
@@ -149,7 +173,7 @@ class RealRegister(Register):
 
     def __lt__(
         self, 
-        other: RealRegister
+        other: 'RealRegister'
     ) -> bool:
         return self.number < other.number
 
@@ -160,7 +184,7 @@ class RealRegister(Register):
         reg: Value
         reg_label, number_str, *rest = reg_sexp
         number: int = int(number_str)
-        reg_type = Type.translate(str(reg_label))
+        reg_type: Type = Type.translate(str(reg_label))
         repr: Optional[str] = None if len(rest) == 0 else str(rest[0])
 
         if number in AR.CALLER_SAVE_REGISTERS_NUM:
@@ -182,76 +206,118 @@ class CallerSaveRegister(RealRegister):
         assert(number in AR.CALLER_SAVE_REGISTERS_NUM)
         super(CallerSaveRegister, self).__init__(reg_type, number, repr)
 
-    def create_set(self):
+    def create_set(
+        self
+    ) -> Set[Register]:
         return {deepcopy(self)}
 
-    def get_defs(self):
+    def get_defs(
+        self
+    ) -> Set[Register]:
         return self.create_set()
 
-    def get_uses(self):
+    def get_uses(
+        self
+    ) -> Set[Register]:
         return self.create_set()
 
 
 class ConditionCodes(Register):
 
-    def __init__(self, reg_type: Type, number: int):
+    def __init__(
+        self, 
+        reg_type: Type, 
+        number: int
+    ) -> None:
         super(ConditionCodes, self).__init__(reg_type, number)
 
 
 class VirtualRegister(Register):
 
-    def __init__(self, reg_type: Type, number: int, prime: int = 0):
+    def __init__(
+        self, 
+        reg_type: Type, 
+        number: int, 
+        prime: int = 0
+    ) -> None:
         super(VirtualRegister, self).__init__(reg_type, number)
 
-        self.prime = prime
+        self.prime: int = prime
 
-    def create_set(self):
+    def create_set(
+        self
+    ) -> Set[Register]:
         return {deepcopy(self)}
 
-    def get_defs(self):
+    def get_defs(
+        self
+    ) -> Set[Register]:
         return self.create_set()
 
-    def get_uses(self):
+    def get_uses(
+        self
+    ) -> Set[Register]:
         return self.create_set()
 
-    def update_virt_reg(self, reg: Value, prime: int):
+    def update_virt_reg(
+        self, 
+        reg: Value, 
+        prime: int
+    ) -> None:
         if self == reg:
             self.prime = prime
 
-    def __repr__(self):
+    def __repr__(
+        self
+    ) -> str:
         return "{}({},{})".format(
             self.__class__.__name__,
             self.number,
             self.prime
         )
 
-    def __hash__(self):
+    def __hash__(
+        self
+    ) -> int:
         return super(VirtualRegister, self).__hash__() ^ hash(self.prime)
 
-    def __eq__(self, other):
+    def __eq__(
+        self, 
+        other: object
+    ) -> bool:
         return (
             super(VirtualRegister, self).__eq__(other)
-            and self.prime == other.prime
+            and self.prime == cast(VirtualRegister,other).prime
         )
 
-    def fuzzy_eq(self, other):
+    def fuzzy_eq(
+        self, 
+        other: object
+    ) -> bool:
         return super(VirtualRegister, self).__eq__(other)
 
 
 class Const(Value):
 
-    def __init__(self, value: int):
-        self.value = value
+    def __init__(
+        self, 
+        value: int
+    ) -> None:
+        self.value: int = value
 
-    def asm(self, register_mapping, mem=False):
-        repr = None
+    def asm(
+        self, 
+        register_mapping: RegMap, 
+        mem: bool=False
+    ) -> str:
+        repr: str
 
         if mem:
             assert(self.value > 0)
 
-            value = self.value
-            num_bits = 0
-            num_one = 0
+            value: int = self.value
+            num_bits: int = 0
+            num_one: int = 0
             while value > 1:
                 if value & 1 == 1:
                     num_one += 1
@@ -271,7 +337,9 @@ class Const(Value):
         return repr
 
     @staticmethod
-    def factory(const_sexp: List[Any]):
+    def factory(
+        const_sexp: List[Any]
+    ) -> Value:
         _, value, *_ = const_sexp
 
         return Const(value)
@@ -279,62 +347,100 @@ class Const(Value):
 
 class Memory(Value):
 
-    def __init__(self, mem_type: Type, addr: Value):
-        self.mem_type = mem_type
-        self.addr = addr
+    def __init__(
+        self, 
+        mem_type: Type, 
+        addr: Value
+    ) -> None:
+        self.mem_type: Type = mem_type
+        self.addr: Value = addr
 
-    def get_uses(self):
+    def get_uses(
+        self
+    ) -> Set[Register]:
         return self.addr.get_uses()
 
-    def update_virt_reg(self, reg: Value, prime: int):
+    def update_virt_reg(
+        self, 
+        reg: Value, 
+        prime: int
+    ) -> None:
         self.addr.update_virt_reg(reg, prime)
 
-    def asm(self, register_mapping, mem=True):
+    def asm(
+        self, 
+        register_mapping: RegMap, 
+        mem: bool=False
+    ) -> str:
         return "[{}]".format(
             self.addr.asm(register_mapping, True)
         )
 
     @staticmethod
-    def factory(mem_sexp: List[Any]):
+    def factory(
+        mem_sexp: List[Any]
+    ) -> Value:
         mem_str, mem_addr_sexp, *_ = mem_sexp
 
-        type = Type.translate(mem_str)
-        addr = Value.factory(mem_addr_sexp)
+        type: Type = Type.translate(str(mem_str))
+        addr: Value = Value.factory(mem_addr_sexp)
 
         return Memory(type, addr)
 
 
 class BinaryValue(Value):
 
-    def __init__(self, result_type: Type, value1: Value, value2: Value):
-        self.result_type = result_type
-        self.value1 = value1
-        self.value2 = value2
+    def __init__(
+        self, 
+        result_type: Type, 
+        value1: Value, 
+        value2: Value
+    ) -> None:
+        self.result_type: Type = result_type
+        self.value1: Value = value1
+        self.value2: Value = value2
 
-    def get_uses(self):
+    def get_uses(
+        self
+    ) -> Set[Register]:
         return self.value1.get_uses().union(self.value2.get_uses())
 
-    def update_virt_reg(self, reg: Value, prime: int):
+    def update_virt_reg(
+        self, 
+        reg: Value, 
+        prime: int
+    ) -> None:
         self.value1.update_virt_reg(reg, prime)
         self.value2.update_virt_reg(reg, prime)
 
 
 class Compare(BinaryValue):
 
-    def __init__(self, compare_type: Type, value1: Value, value2: Value):
+    def __init__(
+        self, 
+        compare_type: Type, 
+        value1: Value, 
+        value2: Value
+    ) -> None:
         super(Compare, self).__init__(compare_type, value1, value2)
 
     @staticmethod
-    def factory(compare_sexp: List[Any]):
+    def factory(
+        compare_sexp: List[Any]
+    ) -> Value:
         op_str, value1_sexp, value2_sexp = compare_sexp
 
-        type = Type.translate(op_str)
-        value1 = Value.factory(value1_sexp)
-        value2 = Value.factory(value2_sexp)
+        type: Type = Type.translate(str(op_str))
+        value1: Value = Value.factory(value1_sexp)
+        value2: Value = Value.factory(value2_sexp)
 
         return Compare(type, value1, value2)
 
-    def asm(self, register_mapping, mem=False):
+    def asm(
+        self, 
+        register_mapping: RegMap, 
+        mem: bool=False
+    ) -> str:
         return "cmp {}, {}".format(
             self.value1.asm(register_mapping),
             self.value2.asm(register_mapping)
@@ -350,8 +456,10 @@ class Arithmetic(BinaryValue):
         MINUS = "sub"
 
         @staticmethod
-        def translate(op_str: str):
-            ret = None
+        def translate(
+            op_str: str
+        ) -> 'Arithmetic.ArithmeticOp':
+            ret: Arithmetic.ArithmeticOp
 
             if "plus" in op_str:
                 ret = Arithmetic.ArithmeticOp.PLUS
@@ -366,14 +474,20 @@ class Arithmetic(BinaryValue):
 
             return ret
 
-    def __init__(self, arith_type: Type, value1: Value, value2: Value, arith_op: ArithmeticOp):
+    def __init__(
+        self, 
+        arith_type: Type, 
+        value1: Value, 
+        value2: Value, 
+        arith_op: ArithmeticOp
+    ) -> None:
         super(Arithmetic, self).__init__(arith_type, value1, value2)
-        self.arith_op = arith_op
+        self.arith_op: Arithmetic.ArithmeticOp = arith_op
 
     def asm(
         self, 
-        register_mapping, 
-        mem=False
+        register_mapping: RegMap, 
+        mem: bool=False
     ) -> str:
         repr: str
 
@@ -417,11 +531,11 @@ class Arithmetic(BinaryValue):
     @staticmethod
     def factory(
         arith_sexp: List[Any]
-    ):
+    ) -> Value:
         op_str, value1_sexp, value2_sexp = arith_sexp
-        arith_op = Arithmetic.ArithmeticOp.translate(op_str)
-        arith_type = Type.translate(op_str)
-        value1 = Value.factory(value1_sexp)
-        value2 = Value.factory(value2_sexp)
+        arith_op: Arithmetic.ArithmeticOp = Arithmetic.ArithmeticOp.translate(op_str)
+        arith_type: Type = Type.translate(str(op_str))
+        value1: Value = Value.factory(value1_sexp)
+        value2: Value = Value.factory(value2_sexp)
 
         return Arithmetic(arith_type, value1, value2, arith_op)

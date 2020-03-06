@@ -1,33 +1,37 @@
-from typing import Any, List, Set
+from typing import Any, List, Set, cast
 from queue import PriorityQueue
 
 from graph import *
 from rtl import *
 from rtl.value import Memory
-import sys
 
 MEM_LATENCY = 4
 DEF_USE_LATENCY = 1
 ANTI_LATENCY = 0
-
 
 # The class irepresents a dependency DAG
 class Graph:
 
     class Heuristic:
 
-        def __init__(self, order: Any):
-            self.d = 0
-            self.s = 0
-            self.order = order
+        def __init__(
+            self, 
+            order: int
+        ) -> None:
+            self.d: int = 0
+            self.s: int = 0
+            self.order: int = order
 
-        def __repr__(self):
+        def __repr__(
+            self
+        ) -> str:
             return "({},{},{})".format(self.d, self.s, self.order)
 
-        def __lt__(self, value):
-            assert(self.__class__ == value.__class__)
-
-            lt = False
+        def __lt__(
+            self, 
+            value: 'Graph.Heuristic'
+        ) -> bool:
+            lt: bool = False
 
             if self.d > value.d:
                 lt = True
@@ -39,16 +43,22 @@ class Graph:
 
             return lt
 
-    def __init__(self, directed: bool = False):
-        self.__matrix = []
-        self.__transpose = []
-        self.__dim = 0
-        self.__node_to_row = dict()
-        self.__row_to_node = dict()
-        self.__directed = directed
-        self.__node_heuristics = dict()
+    def __init__(
+        self, 
+        directed: bool = False
+    ) -> None:
+        self.__matrix: List[List[Optional[int]]] = []
+        self.__transpose: List[List[Optional[int]]] = []
+        self.__dim: int = 0
+        self.__node_to_row: Dict[int,int] = dict()
+        self.__row_to_node: Dict[int,int] = dict()
+        self.__directed: bool = directed
+        self.__node_heuristics: Dict[int,Graph.Heuristic] = dict()
 
-    def add_node(self, node: Any):
+    def add_node(
+        self, 
+        node: int
+    ) -> None:
         if node in self:
             return
 
@@ -65,9 +75,14 @@ class Graph:
         self.__row_to_node[self.__dim - 1] = node
         self.__node_heuristics[node] = Graph.Heuristic(node)
 
-    def add_edge(self, node1: Any, node2: Any, weight: int):
-        row1 = -1
-        row2 = -1
+    def add_edge(
+        self, 
+        node1: int,
+        node2: int, 
+        weight: int
+    ) -> None:
+        row1: int
+        row2: int
 
         for node in [node1, node2]:
             self.add_node(node)
@@ -83,10 +98,13 @@ class Graph:
             self.__transpose[row1][row2] = weight
             self.__node_heuristics[node2].s += 1 if self.__matrix[row1][row2] is None else 0
 
-    def remove_node(self, node: Any):
+    def remove_node(
+        self, 
+        node: int
+    ) -> None:
         assert(node in self)
 
-        row_num = self.__node_to_row[node]
+        row_num: int = self.__node_to_row[node]
 
         self.__matrix[row_num] = [None for _ in range(self.__dim)]
         self.__transpose[row_num] = [None for _ in range(self.__dim)]
@@ -99,7 +117,11 @@ class Graph:
         del self.__node_to_row[node]
         del self.__node_heuristics[node]
     
-    def is_edge(self, node1: Any, node2: Any):
+    def is_edge(
+        self, 
+        node1: int, 
+        node2: int
+    ) -> bool:
         assert(node1 in self and node2 in self)
 
         row1 = self.__node_to_row[node1]
@@ -107,9 +129,13 @@ class Graph:
 
         return self.__matrix[row1][row2] is not None
 
-    def dfs(self, start_node: Any, visited: Set):
-        topo_sort = [start_node]
-        row = self.__node_to_row[start_node]
+    def dfs(
+        self, 
+        start_node: int, 
+        visited: Set[int]
+    ) -> List[int]:
+        topo_sort: List[int] = [start_node]
+        row: int = self.__node_to_row[start_node]
 
         visited.update({start_node})
 
@@ -120,16 +146,18 @@ class Graph:
         return topo_sort
 
     # Calculate the "d" value for each node
-    def heuristics(self):
-        visited = set()
-        topo_sort = []
+    def heuristics(
+        self
+    ) -> None:
+        visited: Set[int] = set()
+        topo_sort: List[int] = []
 
         for idx in range(len(self.__matrix)):
             if self.__row_to_node[idx] not in visited:
                 topo_sort = self.dfs(
                     self.__row_to_node[idx], visited) + topo_sort
 
-        row = -1
+        row: int
         for node in topo_sort:
             row = self.__node_to_row[node]
             for idx in range(len(self.__matrix)):
@@ -138,16 +166,18 @@ class Graph:
                         max(
                             self.__node_heuristics[self.__row_to_node[idx]].d,
                             self.__node_heuristics[node].d +
-                            self.__matrix[idx][row]
+                            cast('int',self.__matrix[idx][row])
                         )
                     )
 
     # Build the schedule list using a READY list
-    def schedule(self):
-        ready = PriorityQueue()
-        seen = set()
-        schedule = []
-        curr = None
+    def schedule(
+        self
+    ) -> List[int]:
+        ready: PriorityQueue[Graph.Heuristic] = PriorityQueue()
+        seen: Set[int] = set()
+        schedule: List[int] = []
+        curr: Graph.Heuristic
 
         while True:
             for idx in range(len(self.__transpose)):
@@ -166,17 +196,23 @@ class Graph:
 
         return schedule
 
-    def __contains__(self, node):
+    def __contains__(
+        self, 
+        node: int
+    ) -> bool:
         return node in self.__node_to_row
 
 
 # Divides code into basic blocks
-def bb_instruction_schedule(vertices: List[Vertex], register_mapping=None):
-    init_length = len(vertices)
+def bb_instruction_schedule(
+    vertices: List[Vertex], 
+    register_mapping: Optional[RegMap]=None
+) -> None:
+    init_length: int = len(vertices)
 
-    idx = 0
-    basic_block = -1
-    first_bb = -1
+    idx: int = 0
+    basic_block: int = -1
+    first_bb: int = -1
 
     for vertex in vertices:
         vertex.rtl.set_defs()
@@ -198,19 +234,24 @@ def bb_instruction_schedule(vertices: List[Vertex], register_mapping=None):
 
 
 # Builds the DAG for a basic block and reschedules the instructions
-def local_instruction_schedule(vertices: List[Vertex], start, end):
+def local_instruction_schedule(
+    vertices: List[Vertex], 
+    start: int, 
+    end: int
+) -> None:
 
     if isinstance(vertices[start].rtl, Label):
         start += 1
     if isinstance(vertices[end].rtl, Jump):
         end -= 1
 
-    curr_defs = None
-    next_defs = None
-    next_uses = None
-    mem = False
-    matrix = Graph(directed=True)
-    idx2 = -1
+    curr_defs: Set[Register]
+    next_defs: Set[Register]
+    next_uses: Set[Register]
+    mem: bool = False
+    matrix: Graph = Graph(directed=True)
+    idx2: int
+    idx1: int
 
     for idx1 in range(start, end + 1):
         matrix.add_node(idx1)
@@ -218,7 +259,7 @@ def local_instruction_schedule(vertices: List[Vertex], start, end):
     for idx1 in range(start, end + 1):
 
         mem = ((isinstance(vertices[idx1].rtl, SetInsn)
-                and isinstance(vertices[idx1].rtl.use_value, Memory))
+                and isinstance(cast(SetInsn, vertices[idx1].rtl).use_value, Memory))
                or isinstance(vertices[idx1].rtl, Load))
 
         curr_defs = vertices[idx1].rtl.defs
@@ -252,7 +293,9 @@ def local_instruction_schedule(vertices: List[Vertex], start, end):
 
             if len(curr_defs.intersection(next_uses)) != 0:
                 matrix.add_edge(
-                    idx1, idx2, MEM_LATENCY if mem else DEF_USE_LATENCY)
+                    idx1, idx2, 
+                    MEM_LATENCY if mem else DEF_USE_LATENCY
+                )
             curr_defs = curr_defs.difference(next_defs)
             idx2 += 1
 

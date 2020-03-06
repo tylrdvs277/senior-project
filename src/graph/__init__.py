@@ -23,11 +23,38 @@ class Vertex:
         self.live_in: Set[Register] = set()
         self.live_out: Set[Register] = set()
 
-    def init(
+        self.dom: Set['Vertex'] = set()
+
+    def init_liveness(
         self
     ) -> None:
         self.live_out.clear()
         self.live_in.clear()
+
+    def add_dom(
+        self,
+        vertex: 'Vertex'
+    ) -> None:
+        self.dom.add(vertex)
+
+    def update_dom(
+        self
+    ) -> bool:
+        tmp: Set['Vertex'] = set()
+        edge: Edge
+        change: bool
+
+        tmp = tmp.union(self.in_edges[0].start.dom)
+        for edge in self.in_edges[1 : ]:
+            tmp.intersection_update(edge.start.dom)
+        tmp.add(self)
+
+        change = False
+        if len(tmp) != len(self.dom):
+            change = True
+            self.dom = tmp
+
+        return change
 
     def compute_live_out(
         self
@@ -53,7 +80,6 @@ class Vertex:
 class Edge:
 
     class EdgeType(Enum):
-        BASIC_BLOCK: int = 1
         SEQUENTIAL: int = 2
         JUMP: int = 3
 
@@ -105,39 +131,114 @@ def generate_cfg(
         vertex = vertices[idx]
 
         if isinstance(vertex.rtl, Jump):
-            next_vertex = insn_reference[vertex.rtl.jump_loc]
+            jump_rtl: Jump = cast(Jump, vertex.rtl)
+            next_vertex = insn_reference[jump_rtl.jump_loc]
             Edge.link(vertex, next_vertex, Edge.EdgeType.JUMP)
 
             if isinstance(vertex.rtl, ConditionalJump):
                 next_vertex = vertices[idx + 1]
                 Edge.link(vertex, next_vertex, Edge.EdgeType.SEQUENTIAL)
 
+        elif isinstance(vertex.rtl, Call) and cast(Call, vertex.rtl).is_exit_func():
+            pass
+
         else:
             next_vertex = vertices[idx + 1]
-            Edge.link(vertex, next_vertex, Edge.EdgeType.BASIC_BLOCK)
+            Edge.link(vertex, next_vertex, Edge.EdgeType.SEQUENTIAL)
 
     return vertices
 
 
-# TODO: replace with dominator post-dom
-def identify_loops(
+def dominance(
     vertices: List[Vertex]
 ) -> None:
-    queue: Queue[Vertex] = Queue()
+    vertex: Vertex
+
+    vertices[0].add_dom(vertices[0])
+    for vertex in vertices[1 : ]:
+        for dom_vertex in vertices:
+            vertex.add_dom(dom_vertex)
+
+    change: bool = True
+    while change:
+        change = False
+
+        for vertex in vertices[1 : ]:
+            if vertex.update_dom():
+                change = True
+
+
+# Backedge m to n
+def identify_loop(
+    vertices: List[Vertex],
+    m: Vertex,
+    n: Vertex
+) -> Set[Vertex]:
+    loop: Set[Vertex] = {m, n}
+    stack: List[Vertex] = []
+    p: Vertex
+    q: Vertex
+
+    if m is not n:
+        stack.append(m)
+
+    while len(stack) > 0:
+        p = stack.pop()
+        edge: Edge
+
+        for edge in p.in_edges:
+            q = edge.start
+            if q not in loop:
+                loop.add(q)
+                stack.append(q)
+    
+    return loop
+
+
+# TODO: replace with dominator post-dom
+def identify_backedge(
+    vertices: List[Vertex]
+) -> None:
+    vertex: Vertex
+    loop: Set[Vertex]
+    headers: Dict[Vertex,Set[Vertex]] = dict()
+    edge: Edge
+    loop_header: Vertex
+    loop_headers: Set[Vertex] = set()
+    idx: int
+    max_bb: int
+    new_vertex: Vertex
 
     for vertex in vertices:
-        vertex.loop = 0
-        vertex.visited = False
+        for edge in vertex.out_edges:
+            if edge.end in vertex.dom:
+                loop_header = edge.end
+                loop = identify_loop(vertices, vertex, loop_header)
+                loop_headers.add(loop_header)
 
-    queue.put(vertices[0])
-    while not queue.empty():
-        curr = queue.get()
-        curr.visited = True
+                for v in loop:
+                    v.loop += 1
 
-        for out_edge in curr.out_edges:
-            next_vertex = out_edge.end
-            if next_vertex.visited:
-                for i in range(vertices.index(next_vertex), vertices.index(curr) + 1):
-                    vertices[i].loop += 1
+    max_bb = max(map(lambda vertex: vertex.rtl.basic_block, vertices))
+    for loop_header in loop_headers:
+        max_bb += 1
+        new_vertex = Vertex(LoopPreheader(-1, max_bb))
+
+        preheader_in_edges: List[Edge] = []
+        loop_header_in_edges: List[Edge] = []
+        for edge in loop_header.in_edges:
+            if edge.edge_type == Edge.EdgeType.SEQUENTIAL:
+                edge.end = new_vertex
+                preheader_in_edges.append(edge)
+            elif edge.edge_type == Edge.EdgeType.JUMP:
+                loop_header_in_edges.append(edge)
             else:
-                queue.put(next_vertex)
+                raise NotImplementedError
+        new_vertex.in_edges = preheader_in_edges
+        loop_header.in_edges = loop_header_in_edges
+        Edge.link(new_vertex, loop_header, Edge.EdgeType.SEQUENTIAL)
+
+        new_vertex.loop = loop_header.loop - 1
+
+        idx = vertices.index(loop_header)
+        vertices.insert(idx, new_vertex)

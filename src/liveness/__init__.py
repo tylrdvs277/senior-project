@@ -136,7 +136,7 @@ def compute_liveness(
     for vertex in vertices:
         vertex.rtl.set_defs()
         vertex.rtl.set_uses()
-        vertex.init()
+        vertex.init_liveness()
 
     while iterate:
         iterate = False
@@ -216,16 +216,15 @@ def spill_candidate(
     reg_spill_factor: Dict[VirtualRegister,int] = dict()
 
     for vertex in vertices:
-        for refs in [vertex.rtl.defs, vertex.rtl.uses]:
-            for reg in refs:
-                if (
-                    not isinstance(reg, VirtualRegister)
-                    or reg.prime != 0
-                ):
-                    continue
-                if reg not in reg_spill_factor:
-                    reg_spill_factor[reg] = 0
-                reg_spill_factor[reg] += 1 * (2 ** vertex.loop)
+        for reg in vertex.rtl.defs.union(vertex.rtl.uses):
+            if (
+                not isinstance(reg, VirtualRegister)
+                or reg.prime != 0
+            ):
+                continue
+            if reg not in reg_spill_factor:
+                reg_spill_factor[reg] = 0
+            reg_spill_factor[reg] += 1 * (2 ** vertex.loop)
 
     min_reg: VirtualRegister
     min_spill_factor: int = -1
@@ -247,8 +246,9 @@ def spill_register(
     new_reg: VirtualRegister
     rtl: RTL
     new_vertex: Vertex
+    prime: int
     while idx < len(vertices):
-        prime: int = vertices[idx].rtl.this_insn
+        prime = vertices[idx].rtl.this_insn
 
         if reg in vertices[idx].rtl.uses:
             new_reg = VirtualRegister(reg.reg_type, reg.number, prime)
@@ -290,9 +290,9 @@ def spill_register(
 # Maps a color to architecture register
 def color_to_register(
     color_mapping: Dict[Register, int]
-) -> Dict[Register,RealRegister]:
+) -> RegMap:
     color_register_mapping: Dict[int,RealRegister] = dict()
-    register_mapping: Dict[Register,RealRegister] = dict()
+    register_mapping: RegMap = RegMap(dict())
 
     for real_reg in REAL_REGISTERS:
         color_register_mapping[color_mapping[real_reg]] = real_reg

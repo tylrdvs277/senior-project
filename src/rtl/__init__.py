@@ -1,77 +1,109 @@
 
-from typing import List, Any, Dict
+from typing import List, Any, Dict, Optional, cast
 from enum import Enum
 
 from rtl.value import *
 from rtl.registers import ArchitectureRegisters as AR
 
 
-func_name = None
-CALLER_SAVE_REGISTERS = set(
+func_name: str
+CALLER_SAVE_REGISTERS: Set[CallerSaveRegister] = set(
     CallerSaveRegister(Type.SI, number, None)
     for number in AR.CALLER_SAVE_REGISTERS_NUM
 )
-CALLEE_SAVE_REGISTERS = set(
+CALLEE_SAVE_REGISTERS: Set[RealRegister] = set(
     RealRegister(Type.SI, number, None)
     for number in AR.CALLEE_SAVE_REGISTERS_NUM
 )
-REAL_REGISTERS = CALLER_SAVE_REGISTERS.union(
-    CALLEE_SAVE_REGISTERS
+REAL_REGISTERS: Set[RealRegister] = CALLEE_SAVE_REGISTERS.union(
+    CALLER_SAVE_REGISTERS
 )
 
 
 class RTL:
     
-    def __init__(self, this_insn: int, basic_block: int):
-        self.this_insn = this_insn
-        self.basic_block = basic_block
+    def __init__(
+        self, 
+        this_insn: int, 
+        basic_block: int
+    ) -> None:
+        self.this_insn: int = this_insn
+        self.basic_block: int = basic_block
 
-        self.defs = None
-        self.uses = None
+        self.defs: Set[Register]
+        self.uses: Set[Register]
 
-    def set_defs(self):
+    def set_defs(
+        self
+    ) -> None:
         self.defs = set()
 
-    def set_uses(self):
+    def set_uses(
+        self
+    ) -> None:
         self.uses = set()
 
     @staticmethod
-    def get_(regs, register_mapping):
-        ret = regs
+    def get_(
+        regs: Set[Register], 
+        register_mapping: Optional[RegMap]
+    ) -> Set[Register]:
+        ret: Set[Register] = regs
 
         if register_mapping is not None:
+            register_mapping_unpack: RegMap = cast('RegMap', register_mapping) 
             ret = set()
             for reg in regs:
-                ret.add(register_mapping[reg])
+                ret.add(register_mapping_unpack[reg])
 
         return ret
 
-    def set_defs_reg(self, register_mapping=None):
+    def set_defs_reg(
+        self, 
+        register_mapping: Optional[RegMap]=None
+    ) -> None:
         self.defs = RTL.get_(self.defs, register_mapping)
 
-    def set_uses_reg(self, register_mapping=None):
+    def set_uses_reg(
+        self, 
+        register_mapping: Optional[RegMap]=None
+    ) -> None:
         self.uses = RTL.get_(self.uses, register_mapping)
 
-    def get_defs(self):
+    def get_defs(
+        self
+    ) -> Set[Register]:
         return self.defs
 
-    def get_uses(self):
+    def get_uses(
+        self
+    ) -> Set[Register]:
         return self.uses
 
-    def asm(self, register_mapping, spilled):
+    def asm(
+        self, 
+        register_mapping: RegMap, 
+        spilled: List[Register]
+    ) -> List[str]:
         return []
 
-    def update_virt_reg(self, reg: Value, prime: int):
+    def update_virt_reg(
+        self, 
+        reg: Value, 
+        prime: int
+    ) -> None:
         pass
         
     @staticmethod
-    def factory(rtl_sexp: List[Any]):
-        rtl_repr = []
+    def factory(
+        rtl_sexp: List[Any]
+    ) -> List['RTL']:
+        rtl_repr: List['RTL'] = []
 
         try:
             insn_type, this_insn, _, _, basic_block, *rest = rtl_sexp
-            insn_type = insn_type.lower()
-            insn_classes = dict(
+            insn_type: str = str(insn_type).lower()
+            insn_classes: Dict[str,'RTL'] = dict(
                 insn=Insn,
                 jump_insn=Jump,
                 call_insn=Call,
@@ -90,14 +122,25 @@ class RTL:
 
 class Insn(RTL):
         
-    def __init__(self, this_insn: int, basic_block: int, use_value: Value):
+    def __init__(
+        self, 
+        this_insn: int, 
+        basic_block: int, 
+        use_value: Value
+    ) -> None:
         super(Insn, self).__init__(this_insn, basic_block)
-        self.use_value = use_value
+        self.use_value: Value = use_value
 
-    def set_uses(self):
+    def set_uses(
+        self
+    ) -> None:
         self.uses = self.use_value.get_uses()
 
-    def update_virt_reg(self, reg: Value, prime: int):
+    def update_virt_reg(
+        self, 
+        reg: Value, 
+        prime: int
+    ) -> None:
         self.use_value.update_virt_reg(reg, prime)
 
     @staticmethod
@@ -128,25 +171,43 @@ class Insn(RTL):
 
 class SetInsn(Insn):
     
-    def __init__(self, this_insn: int, basic_block: int, def_value: Value, use_value: Value):
+    def __init__(
+        self, 
+        this_insn: int, 
+        basic_block: int, 
+        def_value: Value, 
+        use_value: Value
+    ) -> None:
         super(SetInsn, self).__init__(this_insn, basic_block, use_value)
-        self.def_value = def_value
+        self.def_value: Value = def_value
 
-    def set_defs(self):
+    def set_defs(
+        self
+    ) -> None:
         self.defs = self.def_value.get_defs()
 
-    def set_uses(self):
+    def set_uses(
+        self
+    ) -> None:
         super(SetInsn, self).set_uses()
 
         if isinstance(self.def_value, Memory):
             self.uses.update(self.def_value.get_uses())
 
-    def update_virt_reg(self, reg: Value, prime: int):
+    def update_virt_reg(
+        self, 
+        reg: Value, 
+        prime: int
+    ) -> None:
         super(SetInsn, self).update_virt_reg(reg, prime)
         self.def_value.update_virt_reg(reg, prime)
 
-    def asm(self, register_mapping, spilled):
-        insns = []
+    def asm(
+        self, 
+        register_mapping: Dict[Register,RealRegister], 
+        spilled
+    ) -> List[str]:
+        insns: List[str] = []
 
         if isinstance(self.def_value, Register):
             if isinstance(self.use_value, (Register, Const)):
@@ -196,11 +257,20 @@ class SetInsn(Insn):
 
 class Jump(RTL):
     
-    def __init__(self, this_insn: int, basic_block: int, jump_loc: int):
+    def __init__(
+        self, 
+        this_insn: int, 
+        basic_block: int, 
+        jump_loc: int
+    ) -> None:
         super(Jump, self).__init__(this_insn, basic_block)
-        self.jump_loc = jump_loc
+        self.jump_loc: int = jump_loc
 
-    def asm(self, register_mapping, spilled):
+    def asm(
+        self, 
+        register_mapping: Dict[Register,RealRegister], 
+        spilled
+    ) -> List[str]:
         return [
             "b {}".format(
                 Label.make_label(self.jump_loc)
@@ -226,11 +296,21 @@ class Jump(RTL):
 
 class ConditionalJump(Jump):
 
-    def __init__(self, this_insn: int, basic_block: int, jump_loc: int, comp: str):
+    def __init__(
+        self, 
+        this_insn: int, 
+        basic_block: int, 
+        jump_loc: int, 
+        comp: str
+    ) -> None:
         super(ConditionalJump, self).__init__(this_insn, basic_block, jump_loc)
-        self.comp = comp.lower()
+        self.comp: str = comp.lower()
 
-    def asm(self, register_mapping, spilled):
+    def asm(
+        self, 
+        register_mapping: Dict[Register,RealRegister], 
+        spilled
+    ) -> List[str]:
         return [
             "b{} {}".format(
                 self.comp,
@@ -241,16 +321,33 @@ class ConditionalJump(Jump):
 
 class Call(RTL):
 
-    def __init__(self, this_insn: int, basic_block: int, func_name: str):
-        super(Call, self).__init__(this_insn, basic_block)
-        self.func_name = func_name
+    EXIT_FUNCS: Set[str] = {"exit", "abort"}
 
-    def asm(self, register_mapping, spilled):
+    def __init__(
+        self, 
+        this_insn: int, 
+        basic_block: int, 
+        func_name: str
+    ) -> None:
+        super(Call, self).__init__(this_insn, basic_block)
+        self.func_name: str = func_name
+
+
+    def asm(
+        self, 
+        register_mapping: Dict[Register,RealRegister], 
+        spilled
+    ) -> List[str]:
         return [
             "bl {}".format(
                 self.func_name
             )
         ]
+    
+    def is_exit_func(
+        self
+    ) -> bool:
+        return self.func_name in Call.EXIT_FUNCS
 
     @staticmethod
     def factory(this_insn: int, basic_block: int, rest: List[Any]):
@@ -269,8 +366,10 @@ class Call(RTL):
         return Call(this_insn, basic_block, func_name)
 
     @staticmethod
-    def flatten_list(deep_list: List[Any]):
-        flattened = []
+    def flatten_list(
+        deep_list: List[Any]
+    ) -> List[Any]:
+        flattened: List[Any] = []
 
         for element in deep_list:
             if isinstance(element, (list, tuple)):
@@ -283,10 +382,18 @@ class Call(RTL):
 
 class Label(RTL):
 
-    def __init__(self, this_insn: int, basic_block: int):
+    def __init__(
+        self, 
+        this_insn: int, 
+        basic_block: int
+    ) -> None:
         super(Label, self).__init__(this_insn, basic_block)
 
-    def asm(self, register_mapping, spilled):
+    def asm(
+        self, 
+        register_mapping: Dict[Register,RealRegister], 
+        spilled
+    ) -> List[str]:
         return [
             "{}:".format(
                 Label.make_label(self.this_insn)
@@ -294,7 +401,9 @@ class Label(RTL):
         ]
 
     @staticmethod
-    def make_label(insn_number: int):
+    def make_label(
+        insn_number: int
+    ) -> str:
         assert(func_name is not None)
 
         return "L{}_{}".format(insn_number, func_name)
@@ -306,12 +415,21 @@ class Label(RTL):
 
 class Stack(RTL):
 
-    def __init__(self, this_insn: int, basic_block: int, value: Value):
+    def __init__(
+        self, 
+        this_insn: int, 
+        basic_block: int, 
+        value: Value
+    ) -> None:
         super(Stack, self).__init__(this_insn, basic_block)
         assert(isinstance(value, VirtualRegister))
-        self.value = value
+        self.value: Value = value
    
-    def asm(self, register_mapping, spilled):
+    def asm(
+        self, 
+        register_mapping: Dict[Register,RealRegister], 
+        spilled
+    ) -> List[str]:
         return [
             "{} {}, [{},#{}]".format(
                 "{}",
@@ -321,7 +439,10 @@ class Stack(RTL):
             )
         ]
 
-    def stack_pos(self, spilled):
+    def stack_pos(
+        self, 
+        spilled
+    ) -> int:
         for (idx, reg) in enumerate(spilled):
             if self.value.fuzzy_eq(reg):
                 return idx
@@ -331,13 +452,24 @@ class Stack(RTL):
 
 class Load(Stack):
 
-    def __init__(self, this_insn: int, basic_block: int, value: Value):
+    def __init__(
+        self, 
+        this_insn: int, 
+        basic_block: int, 
+        value: Value
+    ) -> None:
         super(Load, self).__init__(this_insn, basic_block, value)
 
-    def set_defs(self):
+    def set_defs(
+        self
+    ) -> None:
         self.defs = self.value.get_defs()
 
-    def asm(self, register_mapping, spilled):
+    def asm(
+        self, 
+        register_mapping: Dict[Register,RealRegister], 
+        spilled
+    ) -> List[str]:
         return [
             super(Load, self).asm(register_mapping, spilled)[0].format(
                 "ldr"
@@ -347,18 +479,39 @@ class Load(Stack):
 
 class Store(Stack):
     
-    def __init__(self, this_insn: int, basic_block: int, value: Value):
+    def __init__(
+        self, 
+        this_insn: int, 
+        basic_block: int, 
+        value: Value
+    ) -> None:
         super(Store, self).__init__(this_insn, basic_block, value)
 
-    def set_uses(self):
+    def set_uses(
+        self
+    ) -> None:
         self.uses = self.value.get_uses()
 
-    def asm(self, register_mapping, spilled):
+    def asm(
+        self, 
+        register_mapping: Dict[Register,RealRegister], 
+        spilled
+    ) -> List[str]:
         return [
             super(Store, self).asm(register_mapping, spilled)[0].format(
                 "str"
             )
         ]
+
+
+class LoopPreheader(RTL):
+
+    def __init__(
+        self,
+        this_insn: int, 
+        basic_block: int
+    ) -> None:
+        super(LoopPreheader, self).__init__(this_insn, basic_block)
 
 
 # Generates the assembly language as a string
@@ -424,4 +577,4 @@ def generate_assembly(
         "\tpop {" + ", ".join(callee_save_regs) + ", " + AR.PC + "}"
     )
 
-    return "\n".join(asm) + "\n"
+    return "\n".join(asm) + "\n" 

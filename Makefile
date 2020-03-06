@@ -1,5 +1,5 @@
 PYTHON=python3
-TARGET=src/milestone4.py
+TARGET=src/driver.py
 MAKE=make
 ECHO=$?
 

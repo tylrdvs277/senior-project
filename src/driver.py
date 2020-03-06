@@ -7,6 +7,7 @@ import rtl as r
 import graph as g
 import liveness as l
 import scheduling as i
+import rtl.value as v
 
 class IllegalArgumentError(Exception):
     pass
@@ -36,8 +37,10 @@ def main(
     for rtl_sexp in rtl_sexps:
         rtls += r.RTL.factory(rtl_sexp)
 
-    vertices = g.generate_cfg(rtls)
-    g.identify_loops(vertices)
+    vertices: List[g.Vertex] = g.generate_cfg(rtls)
+    g.dominance(vertices)
+    g.identify_backedge(vertices)
+    return
 
     if not getenv("NO_SCHEDULE"):
         i.bb_instruction_schedule(vertices, None)
@@ -50,17 +53,18 @@ def main(
         l.compute_liveness(vertices)
         matrix = l.interference_matrix(vertices)
         
+        colorable = True
         try:
             colors = l.color_graph(matrix)
         except l.UncolorableError:
-            colorable = True
+            colorable = False
         
         if not colorable:
             spill_reg: r.VirtualRegister = l.spill_candidate(vertices)
             spilled.append(spill_reg)
             l.spill_register(vertices, spill_reg)
 
-    register_allocation: Dict[r.Register,r.RealRegister] = l.color_to_register(colors)
+    register_allocation: v.RegMap = l.color_to_register(colors)
     if not getenv("NO_SCHEDULE"):
         i.bb_instruction_schedule(vertices, register_allocation)
 
