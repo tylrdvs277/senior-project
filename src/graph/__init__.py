@@ -25,6 +25,9 @@ class Vertex:
 
         self.dom: Set['Vertex'] = set()
 
+        self.expect: float = 0.0
+        self.expects: Dict[Vertex, float] = dict()
+
     def init_liveness(
         self
     ) -> None:
@@ -195,13 +198,11 @@ def identify_loop(
     return loop
 
 
-# TODO: replace with dominator post-dom
 def identify_backedge(
     vertices: List[Vertex]
-) -> None:
+) -> Set[Vertex]:
     vertex: Vertex
     loop: Set[Vertex]
-    headers: Dict[Vertex,Set[Vertex]] = dict()
     edge: Edge
     loop_header: Vertex
     loop_headers: Set[Vertex] = set()
@@ -242,3 +243,54 @@ def identify_backedge(
 
         idx = vertices.index(loop_header)
         vertices.insert(idx, new_vertex)
+    
+    return loop_headers
+
+
+ITER_COUNT: int = 100
+def compute_expect(
+    vertices: List[Vertex]
+) -> None:
+    dominance(vertices)
+    loop_headers: Set[Vertex] = identify_backedge(vertices)
+    vertices[0].expect = 1.0
+    change = True
+    
+    while change:
+        change = False
+        for vertex in vertices[1 : ]:
+            if vertex in loop_headers: # Only identified natural loops for one entry
+                for edge in vertex.in_edges:
+                    if edge.edge_type == Edge.EdgeType.SEQUENTIAL:
+                        new_expect: float = ITER_COUNT * edge.start.expect
+                        vertex.expects[edge.start] = new_expect
+            else: # Not a loop header
+                new_expect: float = 0.0
+                edges: List[Edge] = list()
+                for edge in vertex.in_edges:
+                    if not any(
+                        [isinstance(next_edge.end, LoopPreheader) for next_edge in edge.start.out_edges]
+                    ):
+                        edges.append(edge)
+                for edge in edges:
+                    if edge.edge_type == Edge.EdgeType.SEQUENTIAL:
+                        if isinstance(edge.start.rtl, ConditionalJump):
+                            temp_expect: float = (1 - edge.start.rtl.prob) * edge.start.expect
+                            new_expect += temp_expect
+                            vertex.expects[edge.start] = temp_expect
+                        else:
+                            new_expect += edge.start.expect
+                            vertex.expects[edge.start] = edge.start.expect
+                    elif edge.edge_type == Edge.EdgeType.JUMP:
+                        if isinstance(edge.start.rtl, ConditionalJump):
+                            temp_expect: float = edge.start.rtl.prob * edge.start.expect
+                            new_expect += temp_expect
+                            vertex.expects[edge.start] = temp_expect
+                        else:
+                            new_expect += edge.start.expect
+                            vertex.expects[edge.start] = edge.start.expect
+            
+            if new_expect != vertex.expect:
+                change = True
+
+            vertex.expect = new_expect

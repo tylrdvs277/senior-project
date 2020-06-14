@@ -34,16 +34,20 @@ def main(
 
     rtl_sexps: List[List[Any]]
     r.func_name, rtl_sexps = s.read_sexp(in_file)
+
     for rtl_sexp in rtl_sexps:
         rtls += r.RTL.factory(rtl_sexp)
 
     vertices: List[g.Vertex] = g.generate_cfg(rtls)
-    g.dominance(vertices)
-    g.identify_backedge(vertices)
-    return
-
+    g.compute_expect(vertices)
     if not getenv("NO_SCHEDULE"):
-        i.bb_instruction_schedule(vertices, None)
+        l.compute_liveness(vertices)
+        rtls = i.trace_schedule(vertices)
+        vertices = g.generate_cfg(rtls)
+        g.compute_expect(vertices)
+
+    # if not getenv("NO_SCHEDULE"):
+    #     i.bb_instruction_schedule(vertices, None)
 
     colorable: bool = False
     colors: Dict[r.Register,int]
@@ -65,8 +69,8 @@ def main(
             l.spill_register(vertices, spill_reg)
 
     register_allocation: v.RegMap = l.color_to_register(colors)
-    if not getenv("NO_SCHEDULE"):
-        i.bb_instruction_schedule(vertices, register_allocation)
+    # if not getenv("NO_SCHEDULE"):
+    #     i.bb_instruction_schedule(vertices, register_allocation)
 
     rtls = [vertex.rtl for vertex in vertices]
     asm: str = r.generate_assembly(rtls, register_allocation, spilled)

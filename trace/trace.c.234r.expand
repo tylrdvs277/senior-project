@@ -1,0 +1,105 @@
+
+;; Function trace (trace, funcdef_no=0, decl_uid=5555, cgraph_uid=0, symbol_order=0)
+
+
+;; Generating RTL for gimple basic block 2
+
+;; Generating RTL for gimple basic block 3
+
+;; Generating RTL for gimple basic block 4
+
+;; Generating RTL for gimple basic block 5
+
+
+try_optimize_cfg iteration 1
+
+Merging block 3 into block 2...
+Merged blocks 2 and 3.
+Merged 2 and 3 without moving.
+Removing jump 27.
+Merging block 7 into block 6...
+Merged blocks 6 and 7.
+Merged 6 and 7 without moving.
+
+
+try_optimize_cfg iteration 2
+
+
+
+;;
+;; Full RTL generated for this function:
+;;
+(note 1 0 7 NOTE_INSN_DELETED)
+(note 7 1 2 2 [bb 2] NOTE_INSN_BASIC_BLOCK)
+(insn 2 7 3 2 (set (reg/v/f:SI 120 [ X ])
+        (reg:SI 0 r0 [ X ])) "trace.c":2 -1
+     (nil))
+(insn 3 2 4 2 (set (reg/v/f:SI 121 [ Y ])
+        (reg:SI 1 r1 [ Y ])) "trace.c":2 -1
+     (nil))
+(insn 4 3 5 2 (set (reg/v/f:SI 122 [ Z ])
+        (reg:SI 2 r2 [ Z ])) "trace.c":2 -1
+     (nil))
+(insn 5 4 6 2 (set (reg/v:SI 123 [ i ])
+        (reg:SI 3 r3 [ i ])) "trace.c":2 -1
+     (nil))
+(note 6 5 9 2 NOTE_INSN_FUNCTION_BEG)
+(insn 9 6 10 2 (set (reg:SI 111 [ _2 ])
+        (ashift:SI (reg/v:SI 123 [ i ])
+            (const_int 2 [0x2]))) "trace.c":3 -1
+     (nil))
+(insn 10 9 11 2 (set (reg/f:SI 112 [ _3 ])
+        (plus:SI (reg/v/f:SI 121 [ Y ])
+            (reg:SI 111 [ _2 ]))) "trace.c":3 -1
+     (nil))
+(insn 11 10 12 2 (set (reg/v:SI 119 [ <retval> ])
+        (mem:SI (reg/f:SI 112 [ _3 ]) [1 *_3+0 S4 A32])) "trace.c":3 -1
+     (nil))
+(insn 12 11 13 2 (set (reg:CC 100 cc)
+        (compare:CC (reg/v:SI 119 [ <retval> ])
+            (const_int 0 [0]))) "trace.c":5 -1
+     (nil))
+(jump_insn 13 12 14 2 (set (pc)
+        (if_then_else (eq (reg:CC 100 cc)
+                (const_int 0 [0]))
+            (label_ref 19)
+            (pc))) "trace.c":5 -1
+     (int_list:REG_BR_PROB 900 (nil))
+ -> 19)
+(note 14 13 15 4 [bb 4] NOTE_INSN_BASIC_BLOCK)
+(insn 15 14 16 4 (set (reg/v:SI 118 [ a ])
+        (mem:SI (reg/v/f:SI 122 [ Z ]) [1 *Z_15(D)+0 S4 A32])) "trace.c":6 -1
+     (nil))
+(insn 16 15 17 4 (set (mem:SI (reg/f:SI 112 [ _3 ]) [1 *_3+0 S4 A32])
+        (reg/v:SI 118 [ a ])) "trace.c":7 -1
+     (nil))
+(jump_insn 17 16 18 4 (set (pc)
+        (label_ref 22)) -1
+     (nil)
+ -> 22)
+(barrier 18 17 19)
+(code_label 19 18 20 5 2 (nil) [1 uses])
+(note 20 19 21 5 [bb 5] NOTE_INSN_BASIC_BLOCK)
+(insn 21 20 22 5 (set (reg/v:SI 119 [ <retval> ])
+        (mem:SI (plus:SI (reg/v/f:SI 120 [ X ])
+                (reg:SI 111 [ _2 ])) [1 *_4+0 S4 A32])) "trace.c":9 -1
+     (nil))
+(code_label 22 21 23 6 3 (nil) [1 uses])
+(note 23 22 24 6 [bb 6] NOTE_INSN_BASIC_BLOCK)
+(insn 24 23 25 6 (set (reg:SI 125)
+        (mem:SI (plus:SI (reg/v/f:SI 120 [ X ])
+                (reg:SI 111 [ _2 ])) [1 *_5+0 S4 A32])) "trace.c":11 -1
+     (nil))
+(insn 25 24 26 6 (set (reg:SI 124)
+        (plus:SI (reg:SI 125)
+            (reg/v:SI 119 [ <retval> ]))) "trace.c":11 -1
+     (nil))
+(insn 26 25 30 6 (set (mem:SI (plus:SI (reg/v/f:SI 122 [ Z ])
+                (reg:SI 111 [ _2 ])) [1 *_7+0 S4 A32])
+        (reg:SI 124)) "trace.c":11 -1
+     (nil))
+(insn 30 26 31 6 (set (reg/i:SI 0 r0)
+        (reg/v:SI 119 [ <retval> ])) "trace.c":14 -1
+     (nil))
+(insn 31 30 0 6 (use (reg/i:SI 0 r0)) "trace.c":14 -1
+     (nil))

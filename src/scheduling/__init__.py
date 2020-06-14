@@ -1,4 +1,4 @@
-from typing import Any, List, Set, cast
+from typing import Any, List, Set, cast, Tuple
 from queue import PriorityQueue
 
 from graph import *
@@ -301,3 +301,214 @@ def local_instruction_schedule(
 
     matrix.heuristics()
     vertices[start : end + 1] = [vertices[idx] for idx in matrix.schedule()]
+
+
+def trace_schedule(
+    vertices: List[Vertex]
+) -> List[RTL]:
+
+    for vertex in vertices:
+        vertex.visited = False
+
+    trace: List[Vertex] = get_trace(vertices)
+    joins: Dict[Vertex, Set[Register]] = dict()
+    splits: Dict[Vertex, Set[Register]] = dict()
+    for vertex in trace:
+        if len(vertex.in_edges) > 1:
+            live_out: Set[Register] = set()
+            for edge in vertex.in_edges:
+                if edge.start not in trace:
+                    live_out = live_out.union(edge.start.live_out)
+            joins[vertex] = live_out
+        if len(vertex.out_edges) > 1:
+            live_in: Set[Register] = set()
+            for edge in vertex.out_edges:
+                if edge.end not in trace:
+                    live_in = live_in.union(edge.end.live_in)
+            splits[vertex] = live_in
+    before: List[Vertex] = vertices[ : vertices.index(trace[0])]
+    after: List[Vertex] = vertices[vertices.index(trace[-1]) : ]
+    gaps: Dict[Tuple[Vertex, Vertex], List[Vertex]] = dict()
+    for idx1 in range(len(trace) - 1):
+        idx2: int = idx1 + 1
+        v_idx1: int = vertices.index(trace[idx1])
+        v_idx2: int = vertices.index(trace[idx2])
+        if v_idx1 + 1 != v_idx2:
+            gaps[(trace[idx1], trace[idx2])] = vertices[v_idx1 + 1 : v_idx2]
+    
+    schedule: List[Vertex] = trace_schedule_(trace, joins, splits)
+
+    new_vertices: List[Vertex] = before
+    for idx1 in range(len(schedule) - 1):
+        idx2: int = idx1 + 1
+        new_vertices.append(schedule[idx1])
+        if (schedule[idx1], schedule[idx2]) in gaps:
+            new_vertices += gaps[(schedule[idx1], schedule[idx2])]
+    new_vertices += after
+
+    return [vertex.rtl for vertex in new_vertices]
+
+
+def get_trace(
+    vertices: List[Vertex]
+) -> List[Vertex]:
+    trace: List[Vertex] = list()
+
+    max_vertex: Vertex = vertices[0]
+    max_expect: float = vertices[0].expect
+    for vertex in vertices[1 : ]:
+        if vertex.expect > max_expect:
+            max_expect = vertex.expect
+            max_vertex = vertex
+
+    start: Vertex = max_vertex
+
+    current: Vertex = start
+
+    # Go forward
+    while True:
+        for edge in current.out_edges:
+            if any(
+                [isinstance(next_edge.start.rtl, LoopPreheader) for next_edge in edge.end.in_edges]
+            ):
+                break
+        else:
+            best_next: Optional[Vertex] = None
+            best_expect: float = -1.0
+            for edge in current.out_edges:
+                if edge.end.expect > best_expect:
+                    best_expect = edge.end.expect
+                    best_next = edge.end
+            if best_next is not None:
+                best_next_v: Vertex = cast(Vertex, best_next)
+                if best_next_v.expects[current] >= max(best_next_v.expects.values()):
+                    current = best_next_v
+                    trace.append(current)
+                    continue
+                else:
+                    break
+            else:
+                break
+        break
+
+    current = start
+    while True:
+        for edge in current.in_edges:
+            if edge.start.loop > current.loop:
+                break
+        else:
+            trace.append(current)
+            best_prev: Optional[Vertex] = None
+            best_expect: float = -1.0
+            for edge in current.in_edges:
+                if edge.start.expect > best_expect:
+                    best_expect = edge.start.expect
+                    best_next = edge.start
+            if best_prev is not None:
+                best_prev_v: Vertex = cast(Vertex, best_prev)
+                if current.expects[best_prev_v] >= max(current.expects.values()):
+                    current = best_prev_v
+                    continue
+                else:
+                    break
+            else:
+                break
+        break
+
+    return sorted(trace, key=lambda v: vertices.index(v))
+
+
+def trace_schedule_(
+    trace: List[Vertex],
+    joins: Dict[Vertex, Set[Register]],
+    splits: Dict[Vertex, Set[Register]]
+) -> List[Vertex]:
+    matrix: Graph = Graph(directed=True)
+
+    for vertex in trace:
+        vertex.rtl.set_defs()
+        vertex.rtl.set_uses()
+
+    for idx in range(len(trace)):
+        matrix.add_node(idx)
+
+    for idx, vertex in enumerate(trace):
+        
+        mem: bool = (
+            (isinstance(vertex.rtl, SetInsn)
+            and isinstance(cast(SetInsn, vertex.rtl).use_value, Memory))
+            or isinstance(vertex.rtl, Load)
+        )
+        is_join: bool = vertex in joins
+        is_split: bool = vertex in splits
+        b_branch: bool = (
+            isinstance(vertex.rtl, Jump) and 
+            not isinstance(vertex.rtl, ConditionalJump)
+        )
+
+        curr_defs: Set[Register] = vertex.rtl.defs
+        if isinstance(vertex.rtl, Call):
+            curr_defs = curr_defs.union(CALLER_SAVE_REGISTERS)
+        elif isinstance(vertex.rtl, Compare):
+            curr_defs = curr_defs.union({ConditionCodes.get_cc()})
+
+        idx_prime: int = idx - 1
+        while idx_prime >= 0:
+            next_defs = trace[idx_prime].rtl.defs
+            next_uses = trace[idx_prime].rtl.uses
+            if isinstance(trace[idx_prime].rtl, Call):
+                next_defs = next_defs.union(CALLER_SAVE_REGISTERS)
+                next_uses = next_uses.union(CALLER_SAVE_REGISTERS)
+            elif isinstance(trace[idx_prime].rtl, Compare):
+                next_defs = next_defs.union({ConditionCodes.get_cc()})
+            elif isinstance(trace[idx_prime].rtl, ConditionalJump):
+                next_uses = next_uses.union({ConditionCodes.get_cc()})
+
+            if (
+                len(curr_defs.intersection(next_uses)) != 0 or is_split or 
+                (is_join and len(next_defs.intersection(joins[vertex])) > 0) or 
+                b_branch
+            ):
+                matrix.add_edge(idx_prime, idx, ANTI_LATENCY)
+            curr_defs = curr_defs.difference(next_defs)
+            idx_prime -= 1
+
+        curr_defs = vertex.rtl.defs
+        if isinstance(vertex.rtl, Call):
+            curr_defs = curr_defs.union(CALLER_SAVE_REGISTERS)
+        elif isinstance(vertex.rtl, Compare):
+            curr_defs = curr_defs.union({ConditionCodes.get_cc()})
+
+        for idx_prime, vertex_prime in enumerate(trace[idx + 1: ], idx + 1):
+            next_defs = vertex_prime.rtl.defs
+            next_uses = vertex_prime.rtl.uses
+            is_store: bool = (
+                (isinstance(vertex_prime.rtl, SetInsn)
+                and isinstance(cast(SetInsn, vertex_prime.rtl).def_value, Memory))
+                or isinstance(vertex_prime.rtl, Store)
+            )
+            if isinstance(vertex_prime.rtl, Call):
+                next_defs = next_defs.union(CALLER_SAVE_REGISTERS)
+                next_uses = next_uses.union(CALLER_SAVE_REGISTERS)
+            elif isinstance(vertex_prime.rtl, Compare):
+                next_defs = next_defs.union({ConditionCodes.get_cc()})
+            elif isinstance(vertex_prime.rtl, ConditionalJump):
+                next_uses = next_uses.union({ConditionCodes.get_cc()})
+
+            if len(curr_defs.intersection(next_uses)) != 0:
+                matrix.add_edge(
+                    idx, idx_prime, 
+                    MEM_LATENCY if mem else DEF_USE_LATENCY
+                )
+            elif (
+                is_join or (is_split and is_store) or 
+                (is_split and len(curr_defs.intersection(splits[vertex])) > 0) or
+                b_branch
+            ):
+                matrix.add_edge(idx, idx_prime, ANTI_LATENCY)
+            curr_defs = curr_defs.difference(next_defs)
+
+    matrix.heuristics()
+    trace = [trace[idx] for idx in matrix.schedule()]
+
+    return trace

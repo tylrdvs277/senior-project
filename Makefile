@@ -17,11 +17,11 @@ assemble: $(TARGET)
 	@echo "regtest2, dest reg-test/regtest2.s"
 	$(PYTHON) $(TARGET) reg-test/regtest2.c.212r.expand reg-test/regtest2.s
 	@echo
-	@echo "vecsort, dest vecsort/vecsort.s"
-	$(PYTHON) $(TARGET) vecsort/vecsort.cpp.212r.expand vecsort/vecsort.s
+	@echo "trace, dest trace/trace.s"
+	$(PYTHON) $(TARGET) trace/trace.c.234r.expand trace/trace.s
 	@echo
 
-assemble_m3: $(TARGET)
+assemble_no_schedule: $(TARGET)
 	@echo "Building .s files with no scheduling"
 	@echo
 	@echo "matadd, dest matadd/matadd.s"
@@ -33,8 +33,8 @@ assemble_m3: $(TARGET)
 	@echo "regtest2, dest reg-test/regtest2.s"
 	NO_SCHEDULE=1 $(PYTHON) $(TARGET) reg-test/regtest2.c.212r.expand reg-test/regtest2.s
 	@echo
-	@echo "vecsort, dest vecsort/vecsort.s"
-	NO_SCHEDULE=1 $(PYTHON) $(TARGET) vecsort/vecsort.cpp.212r.expand vecsort/vecsort.s
+	@echo "trace, dest trace/trace.s"
+	NO_SCHEDULE=1 $(PYTHON) $(TARGET) trace/trace.c.234r.expand trace/trace.s
 	@echo
 
 build: assemble
@@ -46,11 +46,11 @@ build: assemble
 	@echo "Build regtest in reg-test/"
 	@$(MAKE) -C reg-test -f Makefile
 	@echo
-	@echo "Build vecsort in vecsort/"
-	@$(MAKE) -C vecsort -f Makefile.s
+	@echo "Build trace in trace/"
+	@$(MAKE) -C trace -f Makefile.s
 	@echo
 
-build_m3: assemble_m3
+build_no_schedule: assemble_no_schedule
 	@echo "Compiling executables"
 	@echo
 	@echo "Build matadd in matadd/"
@@ -59,8 +59,8 @@ build_m3: assemble_m3
 	@echo "Build regtest in reg-test/"
 	@$(MAKE) -C reg-test -f Makefile
 	@echo
-	@echo "Build vecsort in vecsort/"
-	@$(MAKE) -C vecsort -f Makefile.s
+	@echo "Build trace in trace/"
+	@$(MAKE) -C trace -f Makefile.s
 	@echo
 
 test: build
@@ -72,8 +72,8 @@ test: build
 	@echo "Test regtest"
 	reg-test/regtest
 	@echo
-	@echo "Test vecsort"
-	@$(MAKE) -C vecsort -f Makefile.s run
+	@echo "Test trace"
+	@$(MAKE) -C trace -f Makefile.s run
 	@echo
 
 clean:

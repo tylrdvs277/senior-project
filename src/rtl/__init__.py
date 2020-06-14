@@ -286,7 +286,13 @@ class Jump(RTL):
         try: # Conditional jump
             _, comp_sexp, jump_taken, _ = locs
             _, jump_loc = jump_taken
-            jump = ConditionalJump(this_insn, basic_block, jump_loc, comp_sexp[0])
+            rest = flatten_list(rest)
+            for idx, element in enumerate(rest):
+                if ConditionalJump.REG_PROB_NAME in str(element):
+                    break
+            else:
+                raise AssertionError("Conditional jump must have branch probability")
+            jump = ConditionalJump(this_insn, basic_block, jump_loc, comp_sexp[0], int(rest[idx + 1]))
         except ValueError: # Unconditional jump
             _, jump_loc = locs
             jump = Jump(this_insn, basic_block, jump_loc)
@@ -296,15 +302,20 @@ class Jump(RTL):
 
 class ConditionalJump(Jump):
 
+    REG_PROB_NAME = "REG_BR_PROB"
+    REG_BR_PROB_MAX = 10_000
+    
     def __init__(
         self, 
         this_insn: int, 
         basic_block: int, 
         jump_loc: int, 
-        comp: str
+        comp: str,
+        br_prob: int
     ) -> None:
         super(ConditionalJump, self).__init__(this_insn, basic_block, jump_loc)
         self.comp: str = comp.lower()
+        self.prob: float = br_prob / ConditionalJump.REG_BR_PROB_MAX
 
     def asm(
         self, 
@@ -352,7 +363,7 @@ class Call(RTL):
     @staticmethod
     def factory(this_insn: int, basic_block: int, rest: List[Any]):
         func_name = None
-        flattened = Call.flatten_list(rest)
+        flattened = flatten_list(rest)
         idx = 0
 
         while func_name is None and idx < len(flattened) - 1:
@@ -365,19 +376,19 @@ class Call(RTL):
         assert(func_name is not None)
         return Call(this_insn, basic_block, func_name)
 
-    @staticmethod
-    def flatten_list(
-        deep_list: List[Any]
-    ) -> List[Any]:
-        flattened: List[Any] = []
 
-        for element in deep_list:
-            if isinstance(element, (list, tuple)):
-                flattened += Call.flatten_list(element)
-            else:
-                flattened.append(element)
-        
-        return flattened
+def flatten_list(
+    deep_list: List[Any]
+) -> List[Any]:
+    flattened: List[Any] = []
+
+    for element in deep_list:
+        if isinstance(element, (list, tuple)):
+            flattened += flatten_list(element)
+        else:
+            flattened.append(element)
+    
+    return flattened
 
 
 class Label(RTL):
@@ -523,11 +534,7 @@ def generate_assembly(
     asm = [
         ".arch armv7a",
         ".global {}".format(func_name),
-        "{}:".format(func_name),
-        "\tmov {}, {}".format(
-            AR.FP,
-            AR.SP
-        )
+        "{}:".format(func_name)
     ]
 
     callee_save_regs = set()
@@ -543,7 +550,14 @@ def generate_assembly(
     callee_save_regs = [reg.asm(register_mapping) for reg in callee_save_regs]
 
     asm.append(
-        "\tpush {" + ", ".join(callee_save_regs) + ", " + AR.LR + "}"
+        "\tpush {" + ", ".join(callee_save_regs) + ", " +  AR.FP + ", " + AR.LR + "}"
+    )
+    asm.append(        
+        "\tadd {}, {}, #{}".format(
+            AR.FP,
+            AR.SP,
+            (len(callee_save_regs) + 2) * AR.INT_SIZE
+        )
     )
 
     if len(spilled) > 0:
@@ -574,7 +588,7 @@ def generate_assembly(
         )
 
     asm.append(
-        "\tpop {" + ", ".join(callee_save_regs) + ", " + AR.PC + "}"
+        "\tpop {" + ", ".join(callee_save_regs) + ", " + AR.FP + ", " + AR.PC + "}"
     )
 
     return "\n".join(asm) + "\n" 

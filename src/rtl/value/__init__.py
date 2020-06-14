@@ -231,6 +231,11 @@ class ConditionCodes(Register):
     ) -> None:
         super(ConditionCodes, self).__init__(reg_type, number)
 
+    @staticmethod
+    def get_cc(
+    ) -> 'ConditionCodes':
+        return ConditionCodes(Type.CC, AR.CONDITION_CODES)
+        
 
 class VirtualRegister(Register):
 
